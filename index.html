@@ -2,711 +2,1044 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>🌟 Chomp Chase!</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Little DaVinci – AI Art Engine</title>
+<meta name="description" content="Curate and generate AI art with Little DaVinci">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
+  /* ─── CSS Variables ─────────────────────────────────────── */
   :root {
-    --bg:#1a0a2e; --panel:rgba(255,255,255,0.07); --panel-border:rgba(255,255,255,0.15);
-    --gold:#FFD700; --pink:#FF6B9D; --cyan:#00E5FF; --green:#69FF47;
-    --purple:#C77DFF; --orange:#FF9500; --text:#fff; --text2:#C8B8FF;
+    --bg:        #0f172a;
+    --bg2:       #141e35;
+    --glass:     rgba(255,255,255,0.04);
+    --border:    rgba(255,255,255,0.08);
+    --pink:      #FF6B9D;
+    --teal:      #4ECDC4;
+    --gold:      #FFE66D;
+    --text:      #f1f5f9;
+    --muted:     rgba(255,255,255,0.4);
+    --dim:       rgba(255,255,255,0.15);
+    --radius:    20px;
+    --radius-sm: 12px;
+    --font-head: 'Playfair Display', serif;
+    --font-body: 'Instrument Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
   }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-  body{
-    background:var(--bg); font-family:'Nunito',sans-serif; color:var(--text);
-    min-height:100vh; display:flex; flex-direction:column; align-items:center; overflow-x:hidden;
-    background-image:
-      radial-gradient(ellipse at 20% 20%,rgba(199,125,255,.15) 0%,transparent 50%),
-      radial-gradient(ellipse at 80% 80%,rgba(0,229,255,.1) 0%,transparent 50%),
-      radial-gradient(ellipse at 50% 50%,rgba(255,107,157,.07) 0%,transparent 70%);
+
+  /* ─── Reset ─────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
   }
-  body::before{
-    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-    background-image:
-      radial-gradient(1px 1px at 10% 15%,rgba(255,255,255,.5) 0%,transparent 100%),
-      radial-gradient(1px 1px at 35% 42%,rgba(255,255,255,.3) 0%,transparent 100%),
-      radial-gradient(1px 1px at 58% 12%,rgba(255,255,255,.5) 0%,transparent 100%),
-      radial-gradient(1px 1px at 78% 28%,rgba(255,255,255,.4) 0%,transparent 100%),
-      radial-gradient(1px 1px at 22% 72%,rgba(255,255,255,.4) 0%,transparent 100%),
-      radial-gradient(1px 1px at 88% 62%,rgba(255,255,255,.3) 0%,transparent 100%),
-      radial-gradient(1px 1px at 50% 82%,rgba(255,255,255,.4) 0%,transparent 100%);
+
+  /* ─── Animated Mesh Background ──────────────────────────── */
+  .mesh {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 60% 50% at 10% 20%, rgba(255,107,157,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 90% 80%, rgba(78,205,196,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,230,109,0.04) 0%, transparent 70%);
+    animation: meshShift 12s ease-in-out infinite alternate;
   }
-  header{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;padding:14px 20px 6px;position:relative;z-index:10}
-  .back-btn{background:var(--panel);border:2px solid var(--panel-border);color:var(--text2);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none}
-  .header-title{font-family:'Fredoka One',cursive;font-size:28px;background:linear-gradient(135deg,var(--gold),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .score-bar{width:100%;max-width:480px;display:flex;gap:8px;padding:0 16px 8px;position:relative;z-index:10}
-  .score-pill{flex:1;background:var(--panel);border:2px solid var(--panel-border);border-radius:16px;padding:6px 8px;text-align:center}
-  .score-pill .label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:2px}
-  .score-pill .value{font-family:'Fredoka One',cursive;font-size:20px;color:var(--gold)}
-  #level-val{color:var(--cyan)}#lives-val{color:var(--pink)}
-  .game-wrapper{width:100%;max-width:480px;padding:0 16px;display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;z-index:10}
-  #game-canvas{border-radius:18px;border:3px solid var(--purple);box-shadow:0 0 30px rgba(199,125,255,.4),0 0 60px rgba(199,125,255,.15);display:block;max-width:100%}
-  .speed-row{display:flex;align-items:center;gap:10px;width:100%;background:var(--panel);border:2px solid var(--panel-border);border-radius:16px;padding:10px 16px}
-  .speed-row label{font-family:'Fredoka One',cursive;font-size:15px;color:var(--text2);white-space:nowrap}
-  .speed-row input[type=range]{flex:1;accent-color:var(--pink);cursor:pointer}
-  .speed-val{font-family:'Fredoka One',cursive;font-size:15px;color:var(--gold);min-width:28px;text-align:right}
-  .dpad-wrapper{position:relative;width:210px;height:210px}
-  .dpad-btn{position:absolute;width:68px;height:68px;border:none;border-radius:18px;cursor:pointer;font-size:30px;display:flex;align-items:center;justify-content:center;user-select:none;box-shadow:0 6px 0 rgba(0,0,0,.45);transition:transform .08s,box-shadow .08s}
-  .dpad-btn:active{transform:translateY(4px)!important;box-shadow:0 2px 0 rgba(0,0,0,.45)!important}
-  #btn-up   {background:linear-gradient(135deg,#a8edea,#fed6e3);color:#333;top:0;   left:50%;transform:translateX(-50%)}
-  #btn-down {background:linear-gradient(135deg,#a8edea,#fed6e3);color:#333;bottom:0;left:50%;transform:translateX(-50%)}
-  #btn-left {background:linear-gradient(135deg,#ffecd2,#fcb69f);color:#333;left:0; top:50%; transform:translateY(-50%)}
-  #btn-right{background:linear-gradient(135deg,#ffecd2,#fcb69f);color:#333;right:0;top:50%; transform:translateY(-50%)}
-  #btn-up:active   {transform:translateX(-50%) translateY(4px)!important}
-  #btn-down:active {transform:translateX(-50%) translateY(4px)!important}
-  #btn-left:active {transform:translateY(calc(-50% + 4px))!important}
-  #btn-right:active{transform:translateY(calc(-50% + 4px))!important}
-  .dpad-center{position:absolute;width:50px;height:50px;background:rgba(255,255,255,.06);border-radius:14px;top:50%;left:50%;transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:22px}
-  .bottom-row{display:flex;gap:12px;width:100%;justify-content:center}
-  .action-btn{flex:1;max-width:160px;height:56px;border:none;border-radius:18px;font-family:'Fredoka One',cursive;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 6px 0 rgba(0,0,0,.4);user-select:none;transition:transform .1s,box-shadow .1s}
-  .action-btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.4)}
-  #pause-btn{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff}
-  #sound-btn{background:linear-gradient(135deg,var(--orange),#ff6b35);color:#fff}
-  #overlay{position:fixed;inset:0;background:rgba(10,5,20,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(6px)}
-  #overlay.hidden{display:none}
-  .overlay-card{background:linear-gradient(135deg,#2d1b4e,#1a0a2e);border:3px solid var(--purple);border-radius:28px;padding:32px 36px;text-align:center;box-shadow:0 0 60px rgba(199,125,255,.3);max-width:340px;width:90%}
-  .ov-emoji{font-size:60px;margin-bottom:10px;display:block;animation:bounce .8s ease infinite alternate}
-  @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}
-  .ov-title{font-family:'Fredoka One',cursive;font-size:34px;background:linear-gradient(135deg,var(--gold),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
-  .ov-sub{font-size:15px;color:var(--text2);margin-bottom:14px;line-height:1.5}
-  .ov-score{font-family:'Fredoka One',cursive;font-size:24px;color:var(--gold);margin-bottom:18px}
-  .big-play-btn{background:linear-gradient(135deg,var(--pink),var(--purple));border:none;border-radius:20px;color:#fff;font-family:'Fredoka One',cursive;font-size:22px;padding:14px 40px;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.4);width:100%;transition:transform .1s,box-shadow .1s}
-  .big-play-btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.4)}
-  .particle{position:fixed;pointer-events:none;font-size:26px;z-index:200;animation:flyup 1s ease-out forwards}
-  @keyframes flyup{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-110px) scale(.4)}}
-  .spacer{height:20px}
+  @keyframes meshShift {
+    0%   { filter: hue-rotate(0deg) brightness(1); }
+    100% { filter: hue-rotate(20deg) brightness(1.05); }
+  }
+
+  /* ─── App Shell ──────────────────────────────────────────── */
+  #app {
+    position: relative; z-index: 1;
+    width: 100vw; height: 100vh;
+    display: grid;
+    grid-template-columns: 250px 1fr 200px;
+    grid-template-rows: 70px 1fr 145px;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  /* ─── Glass Panel ────────────────────────────────────────── */
+  .panel {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* ─── Header ─────────────────────────────────────────────── */
+  #header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+  }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--pink), var(--teal));
+    box-shadow: 0 0 20px rgba(255,107,157,0.3);
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-family: var(--font-head);
+    font-size: 1.5rem; font-weight: 900;
+    letter-spacing: -0.03em;
+    background: linear-gradient(90deg, #fff 40%, var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-left: 12px;
+  }
+  .header-status {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .status-pill {
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.1em;
+    padding: 6px 14px; border-radius: 99px;
+    background: var(--glass); border: 1px solid var(--border);
+  }
+  .status-pill span { color: var(--teal); }
+  .icon-btn {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; width: 36px; height: 36px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, background 0.2s;
+  }
+  .icon-btn:hover { color: var(--text); background: var(--glass); }
+  .icon-btn svg { width: 18px; height: 18px; }
+  /* API key input area */
+  .api-area {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .api-input {
+    background: var(--glass); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 10px;
+    padding: 6px 12px; border-radius: 99px; width: 180px;
+    outline: none; letter-spacing: 0.05em;
+    transition: border-color 0.2s;
+  }
+  .api-input::placeholder { color: var(--muted); }
+  .api-input:focus { border-color: var(--pink); }
+
+  /* ─── Sidebar ────────────────────────────────────────────── */
+  #sidebar {
+    grid-row: 2;
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 18px; overflow-y: auto;
+  }
+  #sidebar::-webkit-scrollbar { width: 3px; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+    font-weight: 500;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .surprise-btn {
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-mono); font-size: 8px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--teal); transition: color 0.2s;
+  }
+  .surprise-btn:hover { color: #fff; }
+
+  /* Explain textarea */
+  .art-textarea {
+    width: 100%; height: 72px; resize: none;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font-body); font-size: 11px;
+    padding: 10px 12px; outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+  .art-textarea::placeholder { color: var(--muted); }
+  .art-textarea:focus { border-color: rgba(255,107,157,0.5); }
+
+  /* Chip grid */
+  .chip-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+  }
+  .chip {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px; color: rgba(255,255,255,0.6);
+    font-family: var(--font-body); font-size: 10px;
+    padding: 6px 8px; cursor: pointer; text-align: center;
+    transition: all 0.15s; line-height: 1.2;
+  }
+  .chip:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .chip.active-pink  { background: var(--pink); border-color: var(--pink); color: #fff; font-weight: 600; }
+  .chip.active-teal  { background: var(--teal); border-color: var(--teal); color: #000; font-weight: 600; }
+  .chip.active-white { background: #fff; border-color: #fff; color: #000; font-weight: 600; }
+  .chip.format-chip  { flex-direction: column; display: flex; align-items: center; gap: 2px; }
+  .chip .chip-sub { font-size: 7px; opacity: 0.5; font-weight: 400; }
+
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* Inputs */
+  .art-input {
+    width: 100%; height: 34px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font-body); font-size: 11px;
+    padding: 0 12px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .art-input::placeholder { color: var(--muted); }
+  .art-input:focus { border-color: rgba(78,205,196,0.5); }
+
+  /* CTA buttons */
+  .btn-primary {
+    width: 100%; height: 40px; border: none; border-radius: var(--radius-sm);
+    background: var(--pink); color: #fff; cursor: pointer;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500;
+    box-shadow: 0 4px 20px rgba(255,107,157,0.25);
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:hover:not(:disabled) { background: #ff528d; transform: translateY(-1px); box-shadow: 0 6px 25px rgba(255,107,157,0.35); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-teal {
+    width: 100%; height: 36px; border: none; border-radius: var(--radius-sm);
+    background: var(--teal); color: #000; cursor: pointer;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
+    box-shadow: 0 4px 18px rgba(78,205,196,0.2);
+    transition: all 0.2s;
+  }
+  .btn-teal:hover:not(:disabled) { background: #3dbdb4; transform: translateY(-1px); }
+  .btn-teal:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Remix card */
+  .remix-card {
+    background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(255,107,157,0.10));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-sm);
+    padding: 14px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .remix-card-header {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--pink);
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+  }
+  .remix-card p {
+    font-size: 10px; color: var(--muted); line-height: 1.5;
+  }
+
+  /* ─── Main Exhibit ───────────────────────────────────────── */
+  #exhibit {
+    grid-row: 2; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .exhibit-frame {
+    width: 100%; height: 100%;
+    border-radius: var(--radius);
+    border: 6px solid rgba(255,255,255,0.15);
+    overflow: hidden; background: #000;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 0 60px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  #exhibit-img {
+    width: 100%; height: 100%; object-fit: contain;
+    transition: opacity 0.4s ease;
+  }
+  .exhibit-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.45);
+    opacity: 0; transition: opacity 0.25s;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .exhibit-frame:hover .exhibit-overlay { opacity: 1; }
+  .exhibit-meta {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+    pointer-events: none;
+  }
+  .exhibit-title {
+    font-family: var(--font-head);
+    font-size: 1.6rem; font-weight: 900; letter-spacing: -0.02em;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  }
+  .exhibit-artist {
+    font-size: 11px; color: rgba(255,255,255,0.65);
+    font-style: italic; margin-top: 2px;
+  }
+  .exhibit-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    color: rgba(255,255,255,0.15);
+  }
+  .exhibit-empty svg { width: 56px; height: 56px; opacity: 0.2; }
+  .exhibit-empty p { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  /* Nav arrows */
+  .nav-arrows {
+    position: absolute; left: 10px; right: 10px; top: 50%; transform: translateY(-50%);
+    display: flex; justify-content: space-between; pointer-events: none;
+  }
+  .nav-arrow {
+    pointer-events: all;
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s;
+    backdrop-filter: blur(4px);
+  }
+  .nav-arrow:hover { background: rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.3); }
+  .nav-arrow svg { width: 18px; height: 18px; }
+
+  /* overlay btn */
+  .ov-btn {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: var(--radius-sm); color: #fff;
+    font-family: var(--font-body); font-size: 11px; font-weight: 500;
+    padding: 8px 16px; cursor: pointer; backdrop-filter: blur(6px);
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.2s;
+  }
+  .ov-btn:hover { background: rgba(255,255,255,0.25); }
+  .ov-btn svg { width: 14px; height: 14px; }
+
+  /* Loading spinner */
+  .spinner-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  .spinner {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 3px solid rgba(255,107,157,0.15);
+    border-top-color: var(--pink);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner-label {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--pink);
+  }
+  .spinner-sub { font-size: 9px; color: var(--muted); margin-top: 4px; text-align: center; }
+
+  /* ─── Right Panel ───────────────────────────────────────── */
+  #right-panel {
+    grid-row: 2;
+    padding: 20px; display: flex; flex-direction: column; gap: 0;
+    align-items: center;
+  }
+  .stat-block { text-align: center; padding: 16px 0; }
+  .stat-num {
+    font-family: var(--font-head);
+    font-size: 2.4rem; font-weight: 900; color: var(--teal);
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: var(--font-mono); font-size: 9px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted); margin-top: 4px;
+  }
+  .curator-block { text-align: center; padding: 16px 0; }
+  .curator-name { font-weight: 700; font-size: 14px; }
+  .notes-block { padding: 16px 0; }
+  .notes-text {
+    font-size: 11px; line-height: 1.6; color: var(--muted);
+    font-style: italic;
+  }
+  .reset-btn {
+    margin-top: auto; background: none; border: none;
+    color: rgba(255,255,255,0.2); cursor: pointer;
+    font-family: var(--font-body); font-size: 10px;
+    transition: color 0.2s; padding: 8px;
+  }
+  .reset-btn:hover { color: #f87171; }
+
+  /* ─── Gallery Footer ────────────────────────────────────── */
+  #gallery-bar {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 20px; overflow: hidden;
+  }
+  .gallery-label {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted); writing-mode: vertical-rl;
+    transform: rotate(180deg); flex-shrink: 0;
+  }
+  .gallery-scroll {
+    flex: 1; overflow-x: auto; overflow-y: hidden;
+    display: flex; align-items: center;
+    height: 100%; padding: 12px 0;
+  }
+  .gallery-scroll::-webkit-scrollbar { height: 3px; }
+  .gallery-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .gallery-items { display: flex; gap: 10px; align-items: center; }
+  .thumb {
+    width: 88px; height: 80px; border-radius: 12px; overflow: hidden;
+    cursor: pointer; position: relative; flex-shrink: 0;
+    border: 2px solid transparent; transition: all 0.2s;
+    opacity: 0.55;
+  }
+  .thumb:hover { opacity: 0.85; transform: scale(1.04); }
+  .thumb.active {
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(255,107,157,0.2);
+    opacity: 1;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb-format {
+    position: absolute; top: 4px; left: 4px;
+    background: rgba(0,0,0,0.5); border-radius: 4px;
+    font-size: 6px; font-family: var(--font-mono);
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: rgba(255,255,255,0.7); padding: 2px 4px;
+  }
+  .thumb-title {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.65); padding: 3px 5px;
+    font-size: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: rgba(255,255,255,0.8);
+  }
+  .thumb-del {
+    position: absolute; top: 4px; right: 4px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #ef4444; border: none; cursor: pointer;
+    color: #fff; font-size: 10px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .thumb:hover .thumb-del { opacity: 1; }
+  .gallery-curator {
+    text-align: right; flex-shrink: 0;
+    font-family: var(--font-mono);
+  }
+  .gallery-curator .gc-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .gallery-curator .gc-name  { font-size: 11px; color: var(--pink); font-weight: 600; margin-top: 2px; }
+
+  /* ─── Exhibition Fullscreen ─────────────────────────────── */
+  #exhibition-modal {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.92); backdrop-filter: blur(24px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s;
+  }
+  #exhibition-modal.open { opacity: 1; pointer-events: all; }
+  .ex-close {
+    position: absolute; top: 28px; right: 28px;
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; transition: color 0.2s, background 0.2s;
+  }
+  .ex-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+  .ex-close svg { width: 26px; height: 26px; }
+  .ex-inner {
+    max-width: 900px; width: 100%;
+    position: relative;
+  }
+  .ex-img-wrap {
+    width: 100%; aspect-ratio: 16/9;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 0 120px rgba(255,107,157,0.15);
+  }
+  .ex-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .ex-caption { padding: 24px 0 0; }
+  .ex-title {
+    font-family: var(--font-head); font-size: 3rem; font-weight: 900;
+    letter-spacing: -0.03em; line-height: 1;
+  }
+  .ex-desc { font-size: 14px; color: var(--muted); font-style: italic; margin-top: 8px; line-height: 1.6; }
+  .ex-artist { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); margin-top: 12px; }
+
+  /* ─── Confetti canvas ───────────────────────────────────── */
+  #confetti-canvas {
+    position: fixed; inset: 0; z-index: 300;
+    pointer-events: none; width: 100%; height: 100%;
+  }
+
+  /* ─── Spinner overlay for loading state ─────────────────── */
+  .dimmed { opacity: 0.3; pointer-events: none; }
+
+  /* ─── Spin for remix button ─────────────────────────────── */
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 4px 20px rgba(255,107,157,0.25); }
+    50% { box-shadow: 0 4px 35px rgba(255,107,157,0.5); }
+  }
+  .btn-primary.generating { animation: pulse-glow 1s ease-in-out infinite; }
+
+  /* ─── Responsive notice ─────────────────────────────────── */
+  .mobile-notice {
+    display: none; position: fixed; inset: 0; z-index: 500;
+    background: var(--bg); align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px; padding: 32px; text-align: center;
+  }
+  @media (max-width: 900px) {
+    .mobile-notice { display: flex; }
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <a href="https://johnlaz.github.io" class="back-btn">🏠</a>
-  <div class="header-title">🌟 Chomp Chase!</div>
-  <div style="width:44px"></div>
-</header>
-
-<div class="score-bar">
-  <div class="score-pill"><div class="label">⭐ Score</div><div class="value" id="score-val">0</div></div>
-  <div class="score-pill"><div class="label">🏆 Best</div><div class="value" id="high-val">0</div></div>
-  <div class="score-pill"><div class="label">❤️ Lives</div><div class="value" id="lives-val">❤️❤️❤️</div></div>
-  <div class="score-pill"><div class="label">🚀 Level</div><div class="value" id="level-val">1</div></div>
+<!-- Mobile fallback -->
+<div class="mobile-notice">
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/>
+  </svg>
+  <p style="font-family:var(--font-head);font-size:1.5rem;font-weight:900;">Little DaVinci</p>
+  <p style="font-size:13px;color:var(--muted);max-width:280px;line-height:1.6;">This app is designed for desktop. Please open it on a wider screen for the full experience.</p>
 </div>
 
-<div class="game-wrapper">
-  <canvas id="game-canvas"></canvas>
+<canvas id="confetti-canvas"></canvas>
+<div class="mesh"></div>
 
-  <div class="speed-row">
-    <label>🐢</label>
-    <input type="range" id="speed-slider" min="1" max="5" value="2" step="1">
-    <div class="speed-val" id="speed-label">2</div>
-    <label>🐇</label>
-  </div>
+<div id="app">
 
-  <div class="dpad-wrapper">
-    <button class="dpad-btn" id="btn-up">⬆️</button>
-    <button class="dpad-btn" id="btn-left">⬅️</button>
-    <div class="dpad-center">😋</div>
-    <button class="dpad-btn" id="btn-right">➡️</button>
-    <button class="dpad-btn" id="btn-down">⬇️</button>
-  </div>
+  <!-- HEADER -->
+  <header id="header" class="panel">
+    <div style="display:flex;align-items:center;gap:0">
+      <div class="logo-mark"></div>
+      <span class="logo-text">Little DaVinci</span>
+    </div>
+    <div class="header-status">
+      <div class="api-area">
+        <input class="api-input" id="groq-key" type="password" placeholder="Groq API Key (for Remix)…" autocomplete="off">
+      </div>
+      <div class="status-pill">Remix: <span id="remix-status">Standby</span></div>
+      <button class="icon-btn" id="exhibit-toggle-btn" title="Exhibition Mode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+    </div>
+  </header>
 
-  <div class="bottom-row">
-    <button class="action-btn" id="pause-btn" onclick="togglePause()">⏸ PAUSE</button>
-    <button class="action-btn" id="sound-btn" onclick="toggleSound()">🔊 SOUND</button>
-  </div>
-  <div class="spacer"></div>
-</div>
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="panel">
+    <div class="section-header">
+      <span class="section-label">Curate Inspiration</span>
+      <button class="surprise-btn" id="surprise-btn">✦ Surprise Me</button>
+    </div>
 
-<div id="overlay">
-  <div class="overlay-card">
-    <span class="ov-emoji" id="ov-emoji">😋</span>
-    <div class="ov-title" id="ov-title">Chomp Chase!</div>
-    <div class="ov-sub" id="ov-sub">Eat all the dots! Grab a pink ⚡ Power Star to scare the ghosts — then chomp them for bonus points!</div>
-    <div class="ov-score" id="ov-score"></div>
-    <button class="big-play-btn" id="ov-btn" onclick="startGame()">🎮 Let's Play!</button>
+    <!-- Explain box -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label class="section-label" style="color:var(--pink)">Explain Your Art</label>
+        <button id="clear-explanation" style="font-size:8px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;display:none">Clear</button>
+      </div>
+      <textarea class="art-textarea" id="explanation" placeholder="Describe what you want… (e.g. A cute robot holding a flower in space)"></textarea>
+    </div>
+
+    <!-- Format -->
+    <div>
+      <label class="section-label" style="display:block;margin-bottom:8px">Output Format</label>
+      <div class="chip-grid" id="format-grid"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Theme -->
+    <div id="theme-section">
+      <label class="section-label" style="display:block;margin-bottom:8px">Theme</label>
+      <div class="chip-grid" id="theme-grid"></div>
+    </div>
+
+    <!-- Genre -->
+    <div id="genre-section">
+      <label class="section-label" style="display:block;margin-bottom:8px">Style</label>
+      <div class="chip-grid" id="genre-grid"></div>
+    </div>
+
+    <!-- Detail -->
+    <div id="detail-section">
+      <label class="section-label" style="display:block;margin-bottom:8px">Mood</label>
+      <div class="chip-grid" id="detail-grid"></div>
+    </div>
+
+    <!-- Extras + Artist + CTA -->
+    <div style="display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--border)">
+      <input class="art-input" id="extras" placeholder="Add extras (e.g. flying cats, rainbow bridge)…">
+      <input class="art-input" id="artist-name" placeholder="Artist name…">
+      <button class="btn-primary" id="curate-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Curate Art
+      </button>
+    </div>
+
+    <!-- Remix card -->
+    <div class="remix-card">
+      <div class="remix-card-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Remix Engine
+      </div>
+      <p>Blend your curated pieces into a unique AI masterpiece using your Groq key.</p>
+      <button class="btn-teal" id="remix-btn">Generate Remix</button>
+    </div>
+  </aside>
+
+  <!-- MAIN EXHIBIT -->
+  <main id="exhibit">
+    <div class="exhibit-frame" id="exhibit-frame">
+      <!-- Loading state -->
+      <div id="loading-state" style="display:none">
+        <div class="spinner-wrap">
+          <div class="spinner"></div>
+          <div>
+            <div class="spinner-label">Curating Art</div>
+            <div class="spinner-sub">Consulting the digital muse…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="exhibit-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p>Gallery Empty</p>
+        <p style="font-size:10px;color:var(--muted);margin-top:4px;font-family:var(--font-body);letter-spacing:0;text-transform:none">Use the sidebar to curate your first piece</p>
+      </div>
+
+      <!-- Image -->
+      <img id="exhibit-img" src="" alt="Current Exhibit" style="display:none" referrerpolicy="no-referrer">
+
+      <!-- Overlay -->
+      <div class="exhibit-overlay" id="exhibit-overlay">
+        <button class="ov-btn" id="regenerate-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          Regenerate
+        </button>
+        <a id="open-full-btn" href="#" target="_blank" rel="noreferrer" class="ov-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          Open Full
+        </a>
+      </div>
+
+      <!-- Meta -->
+      <div class="exhibit-meta" id="exhibit-meta" style="display:none">
+        <div class="exhibit-title" id="exhibit-title"></div>
+        <div class="exhibit-artist" id="exhibit-artist"></div>
+      </div>
+    </div>
+
+    <!-- Nav arrows -->
+    <div class="nav-arrows">
+      <button class="nav-arrow" id="prev-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="nav-arrow" id="next-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside id="right-panel" class="panel">
+    <div class="stat-block">
+      <div class="stat-num" id="artwork-count">0</div>
+      <div class="stat-label">Artworks</div>
+    </div>
+    <div class="divider" style="width:100%"></div>
+    <div class="curator-block">
+      <div class="curator-name">The Explorer Class</div>
+      <div class="stat-label">Top Curators</div>
+    </div>
+    <div class="divider" style="width:100%"></div>
+    <div class="notes-block">
+      <div class="section-label" style="margin-bottom:8px">Exhibition Notes</div>
+      <div class="notes-text">"Our young explorers are discovering the link between deep space colors and abstract geometry."</div>
+    </div>
+    <button class="reset-btn" id="reset-btn">Reset Gallery</button>
+  </aside>
+
+  <!-- GALLERY FOOTER -->
+  <footer id="gallery-bar" class="panel">
+    <div class="gallery-label">The Gallery</div>
+    <div class="gallery-scroll">
+      <div class="gallery-items" id="gallery-items"></div>
+    </div>
+    <div class="gallery-curator">
+      <div class="gc-label">Curated by</div>
+      <div class="gc-name">The Explorer Class</div>
+    </div>
+  </footer>
+
+</div><!-- #app -->
+
+<!-- EXHIBITION MODAL -->
+<div id="exhibition-modal">
+  <button class="ex-close" id="ex-close-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <div class="ex-inner">
+    <div class="ex-img-wrap">
+      <img id="ex-img" src="" alt="Exhibition" referrerpolicy="no-referrer">
+    </div>
+    <div class="ex-caption">
+      <div class="ex-title" id="ex-title"></div>
+      <div class="ex-desc" id="ex-desc"></div>
+      <div class="ex-artist" id="ex-artist"></div>
+    </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-//  CHOMP CHASE — tile-stepped movement, kid-friendly speed
-// ═══════════════════════════════════════════════════════════════
-
-const canvas = document.getElementById('game-canvas');
-const ctx    = canvas.getContext('2d');
-
-const COLS = 19, ROWS = 21;
-const CELL = Math.floor(Math.min(window.innerWidth - 32, 448) / COLS);
-canvas.width  = COLS * CELL;
-canvas.height = ROWS * CELL;
-const CW = canvas.width, CH = canvas.height;
-
-// ── MAZE ─────────────────────────────────────────────────────────
-// 0=open 1=wall 2=dot 3=power pellet 4=ghost pen interior 5=gate
-const BASE_MAP = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,3,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,3,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,2,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,1,1,1,2,1,1,1,0,1,0,1,1,1,2,1,1,1,1],
-  [1,1,1,1,2,1,0,0,0,0,0,0,0,1,2,1,1,1,1],
-  [1,1,1,1,2,1,0,1,4,4,4,1,0,1,2,1,1,1,1],
-  [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0],
-  [1,1,1,1,2,1,0,1,5,5,5,1,0,1,2,1,1,1,1],
-  [1,1,1,1,2,1,0,0,0,0,0,0,0,1,2,1,1,1,1],
-  [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
-  [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+// ─── Data ─────────────────────────────────────────────────────────────────
+const THEMES  = ['Cosmic','Enchanted Forest','Underwater','Urban Jungle','Ancient Ruins','Futuristic City'];
+const GENRES  = ['Pop Art','Impressionism','Pixel Art','Oil Painting','Surrealism','Cyberpunk'];
+const DETAILS = ['Neon Lights','Soft Shadows','Golden Hour','Glitch Effect','High Contrast','Minimalist'];
+const FORMATS = [
+  { name:'Square',    width:1024, height:1024, label:'Standard Art' },
+  { name:'Portrait',  width:720,  height:1280, label:'Phone Wallpaper' },
+  { name:'Landscape', width:1280, height:720,  label:'Wall Art' },
+  { name:'Icon',      width:512,  height:512,  label:'App Icon' }
+];
+const INITIAL_ART = [
+  { id:'1', url:'https://image.pollinations.ai/prompt/A%20vibrant%20neon%20cityscape%20with%20cyberpunk%20vibes?width=1024&height=1024&seed=1&nologo=true', title:'Neon Dreams', description:'A vibrant exploration of urban light and shadow using a synthwave color palette.', artist:'Lumina AI', format:'Square' },
+  { id:'2', url:'https://image.pollinations.ai/prompt/An%20ethereal%20forest%20at%20dawn%20with%20glowing%20plants?width=1024&height=1024&seed=2&nologo=true', title:'Ethereal Forest', description:'Soft pastel colors depicting a mythical woodland at dawn.', artist:'Lumina AI', format:'Square' },
+  { id:'3', url:'https://image.pollinations.ai/prompt/Abstract%20geometric%20shapes%20with%20fluid%20gradients?width=1024&height=1024&seed=3&nologo=true', title:'Geometric Flow', description:'Sharp angles meeting fluid gradients in a study of digital motion.', artist:'Lumina AI', format:'Square' }
 ];
 
-let map = [], totalDots = 0;
-function resetMap() {
-  map = BASE_MAP.map(r => [...r]);
-  totalDots = 0;
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      if (map[r][c] === 2 || map[r][c] === 3) totalDots++;
+// ─── State ────────────────────────────────────────────────────────────────
+let gallery = [];
+let selTheme  = THEMES[0];
+let selGenre  = GENRES[0];
+let selDetail = DETAILS[0];
+let selFormat = FORMATS[0];
+let curIdx    = 0;
+let isLoading = false;
+
+// ─── Persist ──────────────────────────────────────────────────────────────
+function saveGallery() {
+  localStorage.setItem('davinci_gallery', JSON.stringify(gallery));
 }
-
-// ── SPEED TABLE: ms per tile step ────────────────────────────────
-// Lower ms = faster. Level 1 starts at slider position 2 = 180ms/tile.
-const SPEED_MS = [280, 180, 120, 85, 55];
-let speedIdx = 1;
-
-document.getElementById('speed-slider').addEventListener('input', function() {
-  speedIdx = parseInt(this.value) - 1;
-  document.getElementById('speed-label').textContent = this.value;
-});
-
-function pacStepMs()   { return SPEED_MS[speedIdx]; }
-function ghostStepMs() { return Math.round(SPEED_MS[speedIdx] * 1.3); }
-
-// ── PASSABILITY ───────────────────────────────────────────────────
-function passable(col, row, isGhost, throughGate) {
-  if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
-  const t = map[row][col];
-  if (t === 1) return false;
-  if (t === 5 && isGhost && !throughGate) return false;
-  return true;
-}
-
-// ── COLOURS ───────────────────────────────────────────────────────
-const GHOST_COLS = ['#FF6B9D','#00E5FF','#FF9500','#69FF47'];
-const C_SCARED   = '#C77DFF';
-const C_BLINK    = '#ffffff';
-const C_PAC      = '#FFE000';
-const C_DOT      = '#FFD700';
-const C_POWER    = '#FF6B9D';
-const C_WALL     = '#3b18a8';
-const C_WALLB    = '#6d3aff';
-
-// ── PAC STATE ─────────────────────────────────────────────────────
-let pac;
-function resetPac() {
-  pac = {
-    col:9, row:15,          // current tile
-    fromCol:9, fromRow:15,
-    dir:{x:0,y:0},
-    nextDir:{x:1,y:0},      // buffered input
-    animT:1,                 // 0..1, 1=arrived
-    stepTimer:0,             // counts up to pacStepMs()
-    mouth:0.25, mouthD:1,
-    dead:false, deadTimer:0, deadOpen:0,
-  };
-}
-
-// ── GHOST STATE ───────────────────────────────────────────────────
-const GSTART = [{col:8,row:9},{col:9,row:9},{col:10,row:9},{col:9,row:10}];
-let ghosts = [];
-
-function makeGhost(id) {
-  return {
-    id, color: GHOST_COLS[id],
-    col: GSTART[id].col, row: GSTART[id].row,
-    fromCol: GSTART[id].col, fromRow: GSTART[id].row,
-    dir:{x:0,y:-1},
-    animT:1, stepTimer:0,
-    scared:false, eaten:false,
-    inPen:true,
-    penDelay: id * 3500,   // ms before exiting (staggered)
-  };
-}
-
-// ── GAME STATE ────────────────────────────────────────────────────
-let score=0, highScore=0, lives=3, level=1, dotsEaten=0;
-let powerMs=0;
-const POWER_TOTAL = 8000;
-let eatMulti=1;
-let gameRunning=false, gamePaused=false;
-let soundOn=true;
-let raf, lastTs=0;
-
-// ── AUDIO ─────────────────────────────────────────────────────────
-let actx=null;
-function getActx(){
-  if(!actx) actx=new(window.AudioContext||window.webkitAudioContext)();
-  return actx;
-}
-function beep(freq,dur,type,vol){
-  if(!soundOn) return;
-  try{
-    const a=getActx(), o=a.createOscillator(), g=a.createGain();
-    o.connect(g); g.connect(a.destination);
-    o.type=type||'square'; o.frequency.value=freq;
-    g.gain.setValueAtTime(vol||0.1, a.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime+dur);
-    o.start(); o.stop(a.currentTime+dur);
-  }catch(e){}
-}
-function sfxChomp()  { beep(480,0.04); }
-function sfxPower()  { beep(200,0.25,'sawtooth',0.15); }
-function sfxGhost()  { beep(600,0.08); setTimeout(()=>beep(950,0.08),95); }
-function sfxDeath()  { [370,310,250,190,140].forEach((f,i)=>setTimeout(()=>beep(f,0.1,'sawtooth',0.18),i*95)); }
-
-// ── HUD ───────────────────────────────────────────────────────────
-function updateHUD(){
-  document.getElementById('score-val').textContent = score;
-  document.getElementById('high-val').textContent  = highScore;
-  document.getElementById('lives-val').textContent = '❤️'.repeat(Math.max(0,lives));
-  document.getElementById('level-val').textContent = level;
-}
-
-function showOverlay(emoji,title,sub,scoreStr,btnTxt,cb){
-  document.getElementById('ov-emoji').textContent = emoji;
-  document.getElementById('ov-title').textContent = title;
-  document.getElementById('ov-sub').textContent   = sub;
-  document.getElementById('ov-score').textContent = scoreStr;
-  const b = document.getElementById('ov-btn');
-  b.textContent = btnTxt;
-  b.onclick = cb || startGame;
-  document.getElementById('overlay').classList.remove('hidden');
-}
-
-// ── INIT ──────────────────────────────────────────────────────────
-function initLevel(){
-  resetMap(); dotsEaten=0;
-  resetPac();
-  ghosts = [0,1,2,3].map(makeGhost);
-  powerMs=0; eatMulti=1;
-}
-
-function startGame(){
-  document.getElementById('overlay').classList.add('hidden');
-  score=0; lives=3; level=1;
-  highScore=parseInt(localStorage.getItem('chompHS')||'0');
-  initLevel(); updateHUD();
-  gameRunning=true; gamePaused=false;
-  document.getElementById('pause-btn').textContent='⏸ PAUSE';
-  lastTs=performance.now();
-  if(raf) cancelAnimationFrame(raf);
-  raf=requestAnimationFrame(loop);
-}
-
-function togglePause(){
-  if(!gameRunning) return;
-  gamePaused=!gamePaused;
-  document.getElementById('pause-btn').textContent=gamePaused?'▶️ GO!':'⏸ PAUSE';
-  if(!gamePaused){ lastTs=performance.now(); raf=requestAnimationFrame(loop); }
-}
-
-function toggleSound(){
-  soundOn=!soundOn;
-  document.getElementById('sound-btn').textContent=soundOn?'🔊 SOUND':'🔇 MUTED';
-}
-
-// ── MAIN LOOP ─────────────────────────────────────────────────────
-function loop(ts){
-  if(!gameRunning||gamePaused) return;
-  const dt = Math.min(ts - lastTs, 50);
-  lastTs = ts;
-  update(dt);
-  draw();
-  raf = requestAnimationFrame(loop);
-}
-
-// ── UPDATE ────────────────────────────────────────────────────────
-function update(dt){
-
-  // Death animation
-  if(pac.dead){
-    pac.deadTimer += dt;
-    pac.deadOpen = Math.min((pac.deadTimer/550)*Math.PI, Math.PI);
-    if(pac.deadTimer > 850){
-      lives--;
-      updateHUD();
-      if(lives <= 0){
-        gameRunning=false;
-        if(score>highScore){ highScore=score; localStorage.setItem('chompHS',highScore); }
-        setTimeout(()=>showOverlay('😅','Game Over!','Great effort! Try again!','⭐ '+score+' points!','🔄 Play Again!',startGame),400);
-        return;
-      }
-      resetPac();
-      ghosts=[0,1,2,3].map(makeGhost);
-      powerMs=0; eatMulti=1;
+function loadGallery() {
+  try {
+    const raw = localStorage.getItem('davinci_gallery');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-    return;
-  }
-
-  // Power timer
-  if(powerMs>0){
-    powerMs-=dt;
-    if(powerMs<=0){
-      powerMs=0;
-      ghosts.forEach(g=>{ g.scared=false; });
-      eatMulti=1;
-    }
-  }
-
-  stepPac(dt);
-  ghosts.forEach(g=>stepGhost(g,dt));
-  checkHits();
+  } catch(e) {}
+  return [...INITIAL_ART];
 }
 
-// ── PAC TILE-STEPPER ──────────────────────────────────────────────
-// Pac moves one tile at a time. stepTimer counts up to pacStepMs().
-// animT (0→1) drives smooth interpolation between tiles.
-function stepPac(dt){
-  pac.stepTimer += dt;
-  const ms = pacStepMs();
-  pac.animT = Math.min(pac.stepTimer / ms, 1);
-
-  if(pac.stepTimer >= ms){
-    pac.stepTimer -= ms; // carry leftover for smooth rhythm
-    pac.animT = 0;
-
-    // Snap to arrived tile
-    pac.fromCol = pac.col; pac.fromRow = pac.row;
-
-    // Try buffered direction
-    const nd = pac.nextDir;
-    if(passable(pac.col+nd.x, pac.row+nd.y)){
-      pac.dir = {...nd};
+// ─── Chip builders ────────────────────────────────────────────────────────
+function buildChips(containerId, items, getCurrent, onSelect, activeClass) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (getCurrent() === item ? ' ' + activeClass : '');
+    btn.textContent = typeof item === 'string' ? item : item.name;
+    if (typeof item !== 'string') {
+      btn.innerHTML = `<span>${item.name}</span><span class="chip-sub">${item.label}</span>`;
+      btn.style.flexDirection = 'column'; btn.style.display = 'flex'; btn.style.alignItems = 'center'; btn.style.gap = '2px';
     }
-
-    // Attempt move in current direction
-    const nc = pac.col + pac.dir.x;
-    const nr = pac.row + pac.dir.y;
-    if((pac.dir.x!==0||pac.dir.y!==0) && passable(nc, nr)){
-      pac.col = nc; pac.row = nr;
-      eatTile(pac.col, pac.row);
-    }
-    // If blocked: pac stays on same tile (animT resets, visually solid)
-  }
-
-  // Mouth animation (only when moving)
-  if(pac.dir.x!==0||pac.dir.y!==0){
-    pac.mouth += 0.055 * pac.mouthD;
-    if(pac.mouth > 0.3)  pac.mouthD=-1;
-    if(pac.mouth < 0.02) pac.mouthD= 1;
-  }
-}
-
-function eatTile(col,row){
-  const t=map[row][col];
-  if(t===2){
-    map[row][col]=0; score+=10; dotsEaten++;
-    sfxChomp(); updateHUD();
-    if(dotsEaten>=totalDots) levelComplete();
-  } else if(t===3){
-    map[row][col]=0; score+=50; dotsEaten++;
-    powerMs=POWER_TOTAL;
-    ghosts.forEach(g=>{ if(!g.inPen){ g.scared=true; } });
-    eatMulti=1;
-    sfxPower(); updateHUD();
-    spawnParticle('⚡');
-    if(dotsEaten>=totalDots) levelComplete();
-  }
-}
-
-// ── GHOST TILE-STEPPER ────────────────────────────────────────────
-const D4=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
-
-function stepGhost(g,dt){
-  // Pen wait
-  if(g.inPen){
-    g.penDelay-=dt;
-    if(g.penDelay>0) return;
-    // Teleport to pen exit position and start moving
-    g.inPen=false;
-    g.col=9; g.row=11; g.fromCol=9; g.fromRow=11;
-    g.dir={x:0,y:-1}; g.animT=1; g.stepTimer=0;
-  }
-
-  const ms = g.eaten  ? ghostStepMs()*0.45
-           : g.scared ? ghostStepMs()*1.7
-           : ghostStepMs();
-
-  g.stepTimer += dt;
-  g.animT = Math.min(g.stepTimer/ms, 1);
-
-  if(g.stepTimer >= ms){
-    g.stepTimer -= ms;
-    g.animT = 0;
-    g.fromCol=g.col; g.fromRow=g.row;
-
-    // Eaten ghost returns to pen
-    if(g.eaten && g.col===9 && g.row===9){
-      g.eaten=false; g.scared=false;
-      g.inPen=true; g.penDelay=600;
-      g.col=9; g.row=9;
-      return;
-    }
-
-    pickGhostDir(g);
-    g.col += g.dir.x; g.row += g.dir.y;
-  }
-}
-
-function pickGhostDir(g){
-  const cx=g.col, cy=g.row;
-  const rev={x:-g.dir.x, y:-g.dir.y};
-
-  // Target tile
-  let tx=pac.col, ty=pac.row;
-  if(g.eaten){ tx=9; ty=9; }
-  else if(g.scared){ tx=Math.floor(Math.random()*COLS); ty=Math.floor(Math.random()*ROWS); }
-
-  // Valid moves — no 180 reversal unless trapped
-  let opts = D4.filter(d=>{
-    if(d.x===rev.x&&d.y===rev.y) return false;
-    return passable(cx+d.x, cy+d.y, true, g.eaten);
+    btn.addEventListener('click', () => { onSelect(item); renderChips(); });
+    el.appendChild(btn);
   });
-  if(!opts.length){
-    opts = D4.filter(d=>passable(cx+d.x, cy+d.y, true, g.eaten));
-  }
-  if(!opts.length) return;
-
-  if(g.scared){
-    g.dir = opts[Math.floor(Math.random()*opts.length)];
-  } else {
-    opts.sort((a,b)=>
-      Math.hypot(cx+a.x-tx,cy+a.y-ty) - Math.hypot(cx+b.x-tx,cy+b.y-ty)
-    );
-    g.dir = opts[0];
-  }
 }
-
-// ── COLLISIONS ────────────────────────────────────────────────────
-function checkHits(){
-  if(pac.dead) return;
-  ghosts.forEach(g=>{
-    if(g.inPen) return;
-    // Compare tile positions (current and from for ghost during transit)
-    const onSameTile = (g.col===pac.col && g.row===pac.row) ||
-                       (g.fromCol===pac.col && g.fromRow===pac.row && g.animT<0.5);
-    if(!onSameTile) return;
-
-    if(g.scared && !g.eaten){
-      g.eaten=true; g.scared=false;
-      score += 200*eatMulti; eatMulti*=2;
-      sfxGhost(); updateHUD();
-      spawnParticle('👻');
-    } else if(!g.eaten){
-      pac.dead=true; pac.deadTimer=0; pac.deadOpen=0;
-      sfxDeath();
-    }
+function renderChips() {
+  buildChips('format-grid', FORMATS, () => selFormat, v => selFormat = v, 'active-white');
+  buildChips('theme-grid',  THEMES,  () => selTheme,  v => selTheme  = v, 'active-pink');
+  buildChips('genre-grid',  GENRES,  () => selGenre,  v => selGenre  = v, 'active-teal');
+  buildChips('detail-grid', DETAILS, () => selDetail, v => selDetail  = v, 'active-white');
+  // Dim theme/genre/detail when explanation is active
+  const hasExp = document.getElementById('explanation').value.trim();
+  ['theme-section','genre-section','detail-section'].forEach(id => {
+    document.getElementById(id).style.opacity = hasExp ? '0.3' : '1';
+    document.getElementById(id).style.pointerEvents = hasExp ? 'none' : '';
   });
 }
 
-// ── LEVEL COMPLETE ────────────────────────────────────────────────
-function levelComplete(){
-  gameRunning=false;
-  level++; score+=1000;
-  if(score>highScore){ highScore=score; localStorage.setItem('chompHS',highScore); }
-  updateHUD();
-  [0,1,2,3,4,5,6,7].forEach(i=>setTimeout(()=>spawnParticle(['🌟','⭐','✨','🎉'][i%4]),i*110));
-  setTimeout(()=>showOverlay('🎊','Level Clear!','Amazing chomping! Ready for more?','⭐ '+score+' pts  🚀 Lvl '+level,'▶️ Next Level!',()=>{
-    document.getElementById('overlay').classList.add('hidden');
-    initLevel(); updateHUD();
-    gameRunning=true; lastTs=performance.now(); raf=requestAnimationFrame(loop);
-  }),700);
-}
+// ─── Exhibit render ────────────────────────────────────────────────────────
+function renderExhibit() {
+  const img    = document.getElementById('exhibit-img');
+  const empty  = document.getElementById('empty-state');
+  const meta   = document.getElementById('exhibit-meta');
+  const loader = document.getElementById('loading-state');
+  const overlay = document.getElementById('exhibit-overlay');
+  document.getElementById('artwork-count').textContent = gallery.length;
 
-// ── DRAW ──────────────────────────────────────────────────────────
-function draw(){
-  ctx.fillStyle='#080412';
-  ctx.fillRect(0,0,CW,CH);
-  drawMaze();
-  ghosts.forEach(drawGhost);
-  drawPac();
-  if(gamePaused) drawPauseOverlay();
-}
-
-function lerp(a,b,t){ return a+(b-a)*t; }
-
-function drawMaze(){
-  for(let r=0;r<ROWS;r++){
-    for(let c=0;c<COLS;c++){
-      const t=map[r][c];
-      const x=c*CELL, y=r*CELL;
-      if(t===1){
-        ctx.fillStyle=C_WALL;
-        ctx.shadowColor=C_WALLB; ctx.shadowBlur=5;
-        rrect(x+1,y+1,CELL-2,CELL-2,4); ctx.fill();
-        ctx.shadowBlur=0;
-      } else if(t===2){
-        ctx.fillStyle=C_DOT;
-        ctx.shadowColor=C_DOT; ctx.shadowBlur=4;
-        ctx.beginPath(); ctx.arc(x+CELL/2,y+CELL/2,CELL*0.11,0,Math.PI*2); ctx.fill();
-        ctx.shadowBlur=0;
-      } else if(t===3){
-        const p=0.8+Math.sin(Date.now()/210)*0.2;
-        ctx.fillStyle=C_POWER;
-        ctx.shadowColor=C_POWER; ctx.shadowBlur=14;
-        ctx.beginPath(); ctx.arc(x+CELL/2,y+CELL/2,CELL*0.29*p,0,Math.PI*2); ctx.fill();
-        ctx.shadowBlur=0;
-      } else if(t===5){
-        ctx.strokeStyle='#C77DFF'; ctx.lineWidth=3;
-        ctx.beginPath(); ctx.moveTo(x,y+CELL/2); ctx.lineTo(x+CELL,y+CELL/2); ctx.stroke();
-      } else if(t===4){
-        ctx.fillStyle='rgba(80,30,150,0.2)'; ctx.fillRect(x,y,CELL,CELL);
-      }
-    }
+  if (isLoading) {
+    img.style.display = 'none'; empty.style.display = 'none';
+    meta.style.display = 'none'; overlay.style.display = 'none';
+    loader.style.display = 'flex';
+    return;
   }
-}
+  loader.style.display = 'none';
 
-function drawPac(){
-  let px, py;
-  if(pac.dead){
-    px=pac.col*CELL+CELL/2; py=pac.row*CELL+CELL/2;
-    const open=pac.deadOpen;
-    ctx.fillStyle=C_PAC; ctx.shadowColor=C_PAC; ctx.shadowBlur=16;
-    ctx.beginPath();
-    ctx.moveTo(px,py);
-    ctx.arc(px,py,CELL*0.44,open,Math.PI*2-open);
-    ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
+  if (gallery.length === 0) {
+    img.style.display = 'none'; meta.style.display = 'none'; overlay.style.display = 'none';
+    empty.style.display = 'flex';
     return;
   }
 
-  const t=pac.animT;
-  px=lerp(pac.fromCol,pac.col,t)*CELL+CELL/2;
-  py=lerp(pac.fromRow,pac.row,t)*CELL+CELL/2;
-  const ang=Math.atan2(pac.dir.y,pac.dir.x)||0;
-  const open=pac.mouth*Math.PI;
+  const item = gallery[curIdx];
+  if (!item) { curIdx = 0; renderExhibit(); return; }
 
-  ctx.fillStyle=C_PAC; ctx.shadowColor=C_PAC; ctx.shadowBlur=16;
-  ctx.beginPath();
-  ctx.moveTo(px,py);
-  ctx.arc(px,py,CELL*0.44,ang+open,ang+Math.PI*2-open);
-  ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
+  empty.style.display = 'none'; overlay.style.display = '';
+  img.style.display = 'block'; img.style.opacity = '0';
+  img.src = item.url;
+  img.onload  = () => { img.style.opacity = '1'; };
+  img.onerror = () => { img.src = `https://picsum.photos/seed/${item.id}/1024/768?blur=5`; img.style.opacity = '1'; };
+  document.getElementById('exhibit-title').textContent  = item.title;
+  document.getElementById('exhibit-artist').textContent = 'by ' + item.artist;
+  meta.style.display = '';
+  document.getElementById('open-full-btn').href = item.url;
 
-  // Eye
-  const ex=px+Math.cos(ang-Math.PI/3)*CELL*0.17;
-  const ey=py+Math.sin(ang-Math.PI/3)*CELL*0.17;
-  ctx.fillStyle='#222';
-  ctx.beginPath(); ctx.arc(ex,ey,CELL*0.075,0,Math.PI*2); ctx.fill();
+  // Exhibition modal sync
+  document.getElementById('ex-img').src    = item.url;
+  document.getElementById('ex-title').textContent  = item.title;
+  document.getElementById('ex-desc').textContent   = '"' + item.description + '"';
+  document.getElementById('ex-artist').textContent = 'Artist: ' + item.artist;
 }
 
-function drawGhost(g){
-  if(g.inPen) return;
-  const t=g.animT;
-  const gx=lerp(g.fromCol,g.col,t)*CELL+CELL/2;
-  const gy=lerp(g.fromRow,g.row,t)*CELL+CELL/2;
-  const blink=powerMs>0&&powerMs<2200&&Math.floor(Date.now()/200)%2===0;
-  const col=g.eaten?'rgba(160,140,255,0.3)':blink?C_BLINK:g.scared?C_SCARED:g.color;
-
-  const r=CELL*0.44;
-  ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=g.scared?14:7;
-  ctx.beginPath();
-  ctx.arc(gx,gy-CELL*0.05,r,Math.PI,0);
-  const bot=gy+r*0.72;
-  ctx.lineTo(gx+r,bot);
-  for(let i=0;i<3;i++){
-    const wx =gx+r-((i+0.5)/3)*r*2;
-    const wy =bot+(i%2===0?CELL*0.1:-CELL*0.09);
-    const wx2=gx+r-((i+1)/3)*r*2;
-    ctx.quadraticCurveTo(wx,wy,wx2,bot);
-  }
-  ctx.lineTo(gx-r,gy-CELL*0.05);
-  ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
-
-  if(!g.eaten){
-    const ey=gy-CELL*0.1;
-    [-0.17,0.17].forEach(ox=>{
-      ctx.fillStyle='white';
-      ctx.beginPath(); ctx.ellipse(gx+ox*CELL,ey,CELL*0.11,CELL*0.13,0,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle=g.scared?'#ff44aa':'#111';
-      ctx.beginPath(); ctx.arc(gx+ox*CELL+g.dir.x*CELL*0.04,ey+g.dir.y*CELL*0.04,CELL*0.06,0,Math.PI*2); ctx.fill();
+// ─── Gallery bar ──────────────────────────────────────────────────────────
+function renderGallery() {
+  const container = document.getElementById('gallery-items');
+  container.innerHTML = '';
+  gallery.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'thumb' + (idx === curIdx ? ' active' : '');
+    div.innerHTML = `
+      <img src="${item.url}" alt="" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/${item.id}/200/200'">
+      <div class="thumb-format">${item.format || 'Sq'}</div>
+      <div class="thumb-title">${item.title}</div>
+      <button class="thumb-del" data-id="${item.id}" title="Remove">×</button>
+    `;
+    div.addEventListener('click', e => {
+      if (e.target.classList.contains('thumb-del')) return;
+      curIdx = idx; renderExhibit(); renderGallery();
     });
+    div.querySelector('.thumb-del').addEventListener('click', e => {
+      e.stopPropagation(); removeArt(item.id);
+    });
+    container.appendChild(div);
+  });
+}
+
+function removeArt(id) {
+  gallery = gallery.filter(i => i.id !== id);
+  if (curIdx >= gallery.length) curIdx = Math.max(0, gallery.length - 1);
+  saveGallery(); renderExhibit(); renderGallery();
+}
+
+// ─── Add Art ───────────────────────────────────────────────────────────────
+async function addArt() {
+  if (isLoading) return;
+  isLoading = true;
+  const curateBtn = document.getElementById('curate-btn');
+  curateBtn.disabled = true;
+  curateBtn.classList.add('generating');
+  renderExhibit();
+
+  await new Promise(r => setTimeout(r, 600)); // small UX delay
+
+  const explanation = document.getElementById('explanation').value.trim();
+  const extras      = document.getElementById('extras').value.trim();
+  const artistInput = document.getElementById('artist-name').value.trim();
+
+  const baseDesc = explanation || `${selDetail} ${selGenre} of a ${selTheme}${extras ? '. ' + extras : ''}`;
+  const formatHint = selFormat.name === 'Icon'      ? 'as a clean app icon, white background'
+                   : selFormat.name === 'Portrait'  ? 'as a vertical phone wallpaper'
+                   : selFormat.name === 'Landscape' ? 'as a wide cinematic wall art' : '';
+  const description = (baseDesc + (formatHint ? ' ' + formatHint : '')).trim();
+  const prompt = description + ', digital art, highly detailed, vibrant, masterpiece';
+
+  const seed = Math.floor(Math.random() * 9999999);
+  const url  = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${selFormat.width}&height=${selFormat.height}&seed=${seed}&nologo=true&model=flux`;
+
+  const title = explanation
+    ? (explanation.length > 24 ? explanation.substring(0,24) + '…' : explanation)
+    : `${selTheme} ${selGenre}`;
+
+  gallery.push({ id: Date.now().toString(), url, title, description, artist: artistInput || 'Young Artist', format: selFormat.name });
+  curIdx = gallery.length - 1;
+  saveGallery();
+
+  // Clear inputs
+  document.getElementById('explanation').value = '';
+  document.getElementById('extras').value      = '';
+  document.getElementById('artist-name').value = '';
+  document.getElementById('clear-explanation').style.display = 'none';
+
+  isLoading = false;
+  curateBtn.disabled = false;
+  curateBtn.classList.remove('generating');
+  renderExhibit(); renderGallery(); renderChips();
+  fireConfetti([255,107,157],[78,205,196],[255,255,255]);
+}
+
+// ─── Groq Remix ───────────────────────────────────────────────────────────
+async function remixArt() {
+  if (gallery.length === 0) { alert('Add some art first!'); return; }
+  const apiKey = document.getElementById('groq-key').value.trim();
+  if (!apiKey) { alert('Enter your Groq API key in the header to use Remix.'); return; }
+
+  const remixBtn = document.getElementById('remix-btn');
+  remixBtn.disabled = true; remixBtn.textContent = 'Remixing…';
+  document.getElementById('remix-status').textContent = 'Active';
+
+  const descriptions = gallery.map(i => i.description).join('\n');
+  const systemMsg = `You are an expert art curator for a children's art engine called "Little DaVinci". Given a collection of artwork descriptions, invent a COMPLETELY NEW whimsical concept. Respond ONLY with valid JSON: {"title":"...","description":"...","prompt":"..."}. The prompt should be under 50 words, vivid, and suitable for an image generator. No markdown, no backticks.`;
+  const userMsg = `Here are the art descriptions:\n${descriptions}\n\nCreate a unique new concept that blends or transcends these styles.`;
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role:'system', content: systemMsg },{ role:'user', content: userMsg }],
+        temperature: 0.9, max_tokens: 300
+      })
+    });
+    const data = await res.json();
+    const raw  = data.choices?.[0]?.message?.content || '{}';
+    const result = JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    const seed = Math.floor(Math.random() * 9999999);
+    const url  = `https://image.pollinations.ai/prompt/${encodeURIComponent(result.prompt || 'abstract vibrant digital art')}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+
+    gallery.push({ id: Date.now().toString(), url, title: result.title || 'The Infinite Remix', description: result.description || '', artist: 'Groq AI', format: 'Square', isGenerative: true });
+    curIdx = gallery.length - 1;
+    saveGallery(); renderExhibit(); renderGallery();
+    fireConfetti([255,107,157],[78,205,196],[255,230,109]);
+  } catch(err) {
+    console.error(err);
+    alert('Remix failed: ' + err.message);
   }
+
+  remixBtn.disabled = false; remixBtn.textContent = 'Generate Remix';
+  document.getElementById('remix-status').textContent = 'Standby';
 }
 
-function drawPauseOverlay(){
-  ctx.fillStyle='rgba(10,5,30,0.7)'; ctx.fillRect(0,0,CW,CH);
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.font=`bold ${CELL*1.4}px "Fredoka One",cursive`;
-  ctx.fillStyle='#FFD700'; ctx.fillText('⏸',CW/2,CH/2-CELL);
-  ctx.font=`bold ${CELL*0.85}px "Fredoka One",cursive`;
-  ctx.fillStyle='#C8B8FF'; ctx.fillText('PAUSED',CW/2,CH/2+CELL*0.3);
-  ctx.font=`${CELL*0.5}px Nunito`; ctx.fillStyle='rgba(200,184,255,.6)';
-  ctx.fillText('Tap GO! to continue',CW/2,CH/2+CELL*1.4);
-  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+// ─── Confetti ─────────────────────────────────────────────────────────────
+function fireConfetti(c1, c2, c3) {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx    = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = Array.from({length:120}, () => ({
+    x: Math.random() * canvas.width,
+    y: -10,
+    vx: (Math.random()-0.5) * 6,
+    vy: Math.random() * 4 + 2,
+    color: [c1,c2,c3][Math.floor(Math.random()*3)],
+    size: Math.random()*6+3,
+    angle: Math.random()*360,
+    spin: (Math.random()-0.5)*8,
+    opacity: 1
+  }));
+
+  let frame;
+  function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.12;
+      p.angle += p.spin; p.opacity -= 0.012;
+      if (p.opacity > 0) {
+        alive = true;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.opacity);
+        ctx.fillStyle = `rgb(${p.color.join(',')})`;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle * Math.PI/180);
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+        ctx.restore();
+      }
+    });
+    if (alive) frame = requestAnimationFrame(animate);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  if (frame) cancelAnimationFrame(frame);
+  animate();
 }
 
-function rrect(x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
-  ctx.closePath();
-}
-
-// ── PARTICLES ─────────────────────────────────────────────────────
-function spawnParticle(e){
-  const el=document.createElement('div');
-  el.className='particle'; el.textContent=e;
-  el.style.left=(20+Math.random()*60)+'%';
-  el.style.top=(25+Math.random()*35)+'%';
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),1000);
-}
-
-// ── INPUT ─────────────────────────────────────────────────────────
-function setDir(dx,dy){
-  if(!gameRunning||pac.dead) return;
-  pac.nextDir={x:dx,y:dy};
-  try{ if(actx&&actx.state==='suspended') actx.resume(); }catch(e){}
-}
-
-const BTN_DIRS=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
-['btn-up','btn-down','btn-left','btn-right'].forEach((id,i)=>{
-  const btn=document.getElementById(id);
-  btn.addEventListener('touchstart',e=>{e.preventDefault();setDir(BTN_DIRS[i].x,BTN_DIRS[i].y);},{passive:false});
-  btn.addEventListener('mousedown',()=>setDir(BTN_DIRS[i].x,BTN_DIRS[i].y));
+// ─── Wiring ───────────────────────────────────────────────────────────────
+document.getElementById('curate-btn').addEventListener('click', addArt);
+document.getElementById('remix-btn').addEventListener('click', remixArt);
+document.getElementById('regenerate-btn').addEventListener('click', () => {
+  const item = gallery[curIdx];
+  if (!item) return;
+  try {
+    const u = new URL(item.url);
+    u.searchParams.set('seed', Math.floor(Math.random()*9999999));
+    gallery[curIdx] = { ...item, url: u.toString() };
+    saveGallery(); renderExhibit(); renderGallery();
+  } catch(e) {}
+});
+document.getElementById('prev-btn').addEventListener('click', () => {
+  if (!gallery.length) return;
+  curIdx = (curIdx - 1 + gallery.length) % gallery.length;
+  renderExhibit(); renderGallery();
+});
+document.getElementById('next-btn').addEventListener('click', () => {
+  if (!gallery.length) return;
+  curIdx = (curIdx + 1) % gallery.length;
+  renderExhibit(); renderGallery();
+});
+document.getElementById('surprise-btn').addEventListener('click', () => {
+  selTheme  = THEMES[Math.floor(Math.random()*THEMES.length)];
+  selGenre  = GENRES[Math.floor(Math.random()*GENRES.length)];
+  selDetail = DETAILS[Math.floor(Math.random()*DETAILS.length)];
+  selFormat = FORMATS[Math.floor(Math.random()*FORMATS.length)];
+  renderChips();
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (confirm('Clear the entire gallery?')) {
+    gallery = []; curIdx = 0; saveGallery(); renderExhibit(); renderGallery();
+  }
+});
+document.getElementById('exhibit-toggle-btn').addEventListener('click', () => {
+  document.getElementById('exhibition-modal').classList.add('open');
+});
+document.getElementById('ex-close-btn').addEventListener('click', () => {
+  document.getElementById('exhibition-modal').classList.remove('open');
+});
+document.getElementById('exhibition-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('exhibition-modal'))
+    document.getElementById('exhibition-modal').classList.remove('open');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('exhibition-modal').classList.remove('open');
+  if (e.key === 'ArrowLeft')  document.getElementById('prev-btn').click();
+  if (e.key === 'ArrowRight') document.getElementById('next-btn').click();
+});
+const explanationEl = document.getElementById('explanation');
+const clearBtn      = document.getElementById('clear-explanation');
+explanationEl.addEventListener('input', () => {
+  clearBtn.style.display = explanationEl.value.trim() ? 'block' : 'none';
+  renderChips();
+});
+clearBtn.addEventListener('click', () => {
+  explanationEl.value = ''; clearBtn.style.display = 'none'; renderChips();
 });
 
-document.addEventListener('keydown',e=>{
-  const K={'ArrowUp':[0,-1],'ArrowDown':[0,1],'ArrowLeft':[-1,0],'ArrowRight':[1,0]};
-  if(K[e.key]){e.preventDefault();setDir(...K[e.key]);return;}
-  if(e.key==='p'||e.key==='P'||e.key==='Escape') togglePause();
-});
+// ─── Init ─────────────────────────────────────────────────────────────────
+gallery = loadGallery();
+renderChips();
+renderExhibit();
+renderGallery();
 
-// Swipe
-let swp=null;
-canvas.addEventListener('touchstart',e=>{e.preventDefault();swp=e.touches[0];},{passive:false});
-canvas.addEventListener('touchend',e=>{
-  e.preventDefault();
-  if(!swp) return;
-  const t=e.changedTouches[0];
-  const dx=t.clientX-swp.clientX, dy=t.clientY-swp.clientY;
-  if(Math.abs(dx)>Math.abs(dy)){if(Math.abs(dx)>12)setDir(dx>0?1:-1,0);}
-  else{if(Math.abs(dy)>12)setDir(0,dy>0?1:-1);}
-  swp=null;
-},{passive:false});
-
-// ── BOOT ──────────────────────────────────────────────────────────
-resetMap();
-ghosts=[];
-draw();   // show the maze before game starts
+// ─── Service Worker ───────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
