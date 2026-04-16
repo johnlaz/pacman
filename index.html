@@ -3,1043 +3,1270 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Little DaVinci – AI Art Engine</title>
-<meta name="description" content="Curate and generate AI art with Little DaVinci">
+<title>Little DaVinci – AI Art Engine v3.4.0</title>
+<meta name="description" content="AI art engine powered by Google Imagen 4">
 <meta name="theme-color" content="#0f172a">
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
 <style>
-  /* ─── CSS Variables ─────────────────────────────────────── */
-  :root {
-    --bg:        #0f172a;
-    --bg2:       #141e35;
-    --glass:     rgba(255,255,255,0.04);
-    --border:    rgba(255,255,255,0.08);
-    --pink:      #FF6B9D;
-    --teal:      #4ECDC4;
-    --gold:      #FFE66D;
-    --text:      #f1f5f9;
-    --muted:     rgba(255,255,255,0.4);
-    --dim:       rgba(255,255,255,0.15);
-    --radius:    20px;
-    --radius-sm: 12px;
-    --font-head: 'Playfair Display', serif;
-    --font-body: 'Instrument Sans', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-  }
+:root{--bg:#0f172a;--glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);--pink:#FF6B9D;--teal:#4ECDC4;--gold:#FFE66D;--purple:#a78bfa;--text:#f1f5f9;--muted:rgba(255,255,255,0.38);--radius:20px;--radius-sm:11px;--font-head:'Playfair Display',serif;--font-body:'Instrument Sans',sans-serif;--font-mono:'DM Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);overflow:hidden;-webkit-font-smoothing:antialiased}
+.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 50% at 8% 18%,rgba(255,107,157,0.13) 0%,transparent 60%),radial-gradient(ellipse 50% 60% at 92% 82%,rgba(78,205,196,0.11) 0%,transparent 60%),radial-gradient(ellipse 35% 35% at 52% 52%,rgba(167,139,250,0.06) 0%,transparent 70%);animation:meshShift 14s ease-in-out infinite alternate}
+@keyframes meshShift{0%{filter:hue-rotate(0deg) brightness(1)}100%{filter:hue-rotate(18deg) brightness(1.06)}}
+#app{position:relative;z-index:1;width:100vw;height:100vh;display:grid;grid-template-columns:260px 1fr 210px;grid-template-rows:68px 1fr 148px;gap:12px;padding:12px;overflow:hidden}
+.panel{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+#header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-mark{width:32px;height:32px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,var(--pink),var(--teal));box-shadow:0 0 22px rgba(255,107,157,0.35)}
+.logo-text{font-family:var(--font-head);font-size:1.45rem;font-weight:900;letter-spacing:-0.03em;background:linear-gradient(90deg,#fff 40%,var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header-right{display:flex;align-items:center;gap:8px}
+.api-input{background:var(--glass);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:10px;padding:6px 14px;border-radius:99px;width:182px;outline:none;letter-spacing:0.04em;transition:border-color 0.2s}
+.api-input::placeholder{color:var(--muted)}
+.api-input:focus{border-color:var(--pink)}
+.api-input.gemini:focus{border-color:var(--teal)}
+.status-pill{font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;padding:5px 12px;border-radius:99px;background:var(--glass);border:1px solid var(--border);white-space:nowrap}
+.status-pill span{color:var(--teal)}
+.icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:color 0.2s,background 0.2s;flex-shrink:0}
+.icon-btn:hover{color:var(--text);background:rgba(255,255,255,0.07)}
+.icon-btn svg{width:17px;height:17px}
+#sidebar{grid-row:2;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:11px;min-height:0;scrollbar-gutter:stable}
+#sidebar::-webkit-scrollbar{width:3px}
+#sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.section-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.section-header{display:flex;align-items:center;justify-content:space-between}
+.surprise-btn{background:none;border:none;cursor:pointer;font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);transition:color 0.2s}
+.surprise-btn:hover{color:#fff}
+.art-textarea{width:100%;height:68px;resize:none;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);font-size:11px;padding:9px 11px;outline:none;transition:border-color 0.2s;line-height:1.5}
+.art-textarea::placeholder{color:var(--muted)}
+.art-textarea:focus{border-color:rgba(255,107,157,0.55)}
+.chip-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.chip-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.chip{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:rgba(255,255,255,0.58);font-family:var(--font-body);font-size:9.5px;padding:5px 6px;cursor:pointer;text-align:center;transition:all 0.14s;line-height:1.25}
+.chip:hover{background:rgba(255,255,255,0.1);color:#fff}
+.chip.active-pink{background:var(--pink);border-color:var(--pink);color:#fff;font-weight:600}
+.chip.active-teal{background:var(--teal);border-color:var(--teal);color:#000;font-weight:600}
+.chip.active-white{background:#fff;border-color:#fff;color:#000;font-weight:600}
+.chip.active-purple{background:var(--purple);border-color:var(--purple);color:#fff;font-weight:600}
+.chip.active-gold{background:var(--gold);border-color:var(--gold);color:#000;font-weight:600}
+.chip .chip-sub{display:block;font-size:7px;opacity:0.5;font-weight:400;margin-top:1px}
+.divider{height:1px;background:var(--border)}
+.art-input{width:100%;height:32px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);font-size:11px;padding:0 11px;outline:none;transition:border-color 0.2s}
+.art-input::placeholder{color:var(--muted)}
+.art-input:focus{border-color:rgba(78,205,196,0.5)}
+.upload-zone{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;position:relative}
+.upload-zone:hover{border-color:var(--purple);background:rgba(167,139,250,0.07)}
+.upload-zone.has-photo{border-color:var(--purple);border-style:solid;background:rgba(167,139,250,0.08)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.upload-preview{width:100%;height:60px;object-fit:cover;border-radius:8px;display:none;margin-bottom:6px}
+.upload-preview.visible{display:block}
+.upload-text{font-size:9px;color:var(--muted);font-family:var(--font-mono);letter-spacing:0.06em}
+.upload-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:9px;font-family:var(--font-mono);text-decoration:underline;margin-top:4px;display:none;letter-spacing:0.05em}
+.upload-clear.visible{display:inline}
+.photo-mode-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:99px;padding:3px 8px;font-size:8px;font-family:var(--font-mono);color:var(--purple);letter-spacing:0.08em;text-transform:uppercase}
+.btn-primary{width:100%;height:38px;border:none;border-radius:var(--radius-sm);background:var(--pink);color:#fff;cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;box-shadow:0 4px 18px rgba(255,107,157,0.25);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:hover:not(:disabled){background:#ff528d;transform:translateY(-1px);box-shadow:0 6px 24px rgba(255,107,157,0.38)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-teal{width:100%;height:34px;border:none;border-radius:var(--radius-sm);background:var(--teal);color:#000;cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;box-shadow:0 4px 16px rgba(78,205,196,0.2);transition:all 0.2s}
+.btn-teal:hover:not(:disabled){background:#3dbdb4;transform:translateY(-1px)}
+.btn-teal:disabled{opacity:0.5;cursor:not-allowed}
+.remix-card{background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(255,107,157,0.09));border:1px solid rgba(255,255,255,0.07);border-radius:var(--radius-sm);padding:12px;display:flex;flex-direction:column;gap:9px}
+.remix-card-header{display:flex;align-items:center;gap:7px;color:var(--pink);font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600}
+.remix-card p{font-size:9.5px;color:var(--muted);line-height:1.5}
+.prompt-preview{font-size:8.5px;color:var(--muted);font-family:var(--font-mono);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:6px 8px;line-height:1.5;word-break:break-word;display:none}
+.prompt-preview.visible{display:block}
+#exhibit{grid-row:2;position:relative;display:flex;align-items:center;justify-content:center}
+.exhibit-frame{width:100%;height:100%;border-radius:var(--radius);border:6px solid rgba(255,255,255,0.13);overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 70px rgba(0,0,0,0.55)}
+#exhibit-img{width:100%;height:100%;object-fit:contain;transition:opacity 0.38s ease}
+.exhibit-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.42);opacity:0;transition:opacity 0.22s;display:flex;align-items:center;justify-content:center;gap:10px}
+.exhibit-frame:hover .exhibit-overlay{opacity:1}
+.exhibit-meta{position:absolute;bottom:0;left:0;right:0;padding:18px;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);pointer-events:none}
+.exhibit-title{font-family:var(--font-head);font-size:1.5rem;font-weight:900;letter-spacing:-0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.exhibit-artist{font-size:10px;color:rgba(255,255,255,0.6);font-style:italic;margin-top:2px}
+.exhibit-empty{display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(255,255,255,0.14)}
+.exhibit-empty svg{width:52px;height:52px}
+.exhibit-empty p{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase}
+.nav-arrows{position:absolute;left:8px;right:8px;top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;pointer-events:none}
+.nav-arrow{pointer-events:all;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.14);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.18s;backdrop-filter:blur(4px)}
+.nav-arrow:hover{background:rgba(0,0,0,0.6)}
+.nav-arrow svg{width:17px;height:17px}
+.ov-btn{background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius-sm);color:#fff;font-family:var(--font-body);font-size:11px;font-weight:500;padding:7px 14px;cursor:pointer;backdrop-filter:blur(6px);display:flex;align-items:center;gap:6px;transition:background 0.18s;text-decoration:none}
+.ov-btn:hover{background:rgba(255,255,255,0.25)}
+.ov-btn svg{width:13px;height:13px}
+.ov-btn.export-btn{background:rgba(255,230,109,0.18);border-color:rgba(255,230,109,0.35);color:var(--gold)}
+.ov-btn.export-btn:hover{background:rgba(255,230,109,0.3)}
+.spinner-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.spinner{width:52px;height:52px;border-radius:50%;border:3px solid rgba(255,107,157,0.14);border-top-color:var(--pink);animation:spin 0.85s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--pink)}
+.spinner-sub{font-size:9px;color:var(--muted);margin-top:4px;text-align:center}
+.spinner-progress{width:160px;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;margin-top:10px;overflow:hidden}
+.spinner-progress-bar{height:100%;background:var(--pink);border-radius:1px;width:0%;transition:width 0.4s ease}
+#right-panel{grid-row:2;padding:18px;display:flex;flex-direction:column;gap:0;align-items:center}
+.stat-block{text-align:center;padding:14px 0}
+.stat-num{font-family:var(--font-head);font-size:2.2rem;font-weight:900;color:var(--teal);line-height:1}
+.stat-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.model-badge{font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:99px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.25);color:var(--teal);text-align:center}
+.notes-block{padding:12px 0}
+.notes-text{font-size:11px;line-height:1.6;color:var(--muted);font-style:italic}
+.reset-btn{margin-top:auto;background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-family:var(--font-body);font-size:10px;transition:color 0.2s;padding:8px}
+.reset-btn:hover{color:#f87171}
+#gallery-bar{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:0 18px;overflow:hidden}
+.gallery-label{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0}
+.gallery-scroll{flex:1;overflow-x:auto;overflow-y:hidden;display:flex;align-items:center;height:100%;padding:10px 0}
+.gallery-scroll::-webkit-scrollbar{height:3px}
+.gallery-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.gallery-items{display:flex;gap:9px;align-items:center}
+.thumb{width:86px;height:76px;border-radius:11px;overflow:hidden;cursor:pointer;position:relative;flex-shrink:0;border:2px solid transparent;transition:all 0.18s;opacity:0.52}
+.thumb:hover{opacity:0.88;transform:scale(1.04)}
+.thumb.active{border-color:var(--pink);box-shadow:0 0 0 3px rgba(255,107,157,0.22);opacity:1}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-format{position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.52);border-radius:4px;font-size:6px;font-family:var(--font-mono);text-transform:uppercase;color:rgba(255,255,255,0.7);padding:2px 4px}
+.thumb-title{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.65);padding:3px 5px;font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb-del{position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;background:#ef4444;border:none;cursor:pointer;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.14s}
+.thumb:hover .thumb-del{opacity:1}
+.gallery-curator{text-align:right;flex-shrink:0;font-family:var(--font-mono)}
+.gallery-curator .gc-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em}
+.gallery-curator .gc-name{font-size:11px;color:var(--pink);font-weight:600;margin-top:2px}
+#exhibition-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.92);backdrop-filter:blur(26px);display:flex;align-items:center;justify-content:center;padding:48px;opacity:0;pointer-events:none;transition:opacity 0.32s}
+#exhibition-modal.open{opacity:1;pointer-events:all}
+.ex-close{position:absolute;top:26px;right:26px;background:none;border:none;color:var(--muted);cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color 0.2s,background 0.2s}
+.ex-close:hover{color:#fff;background:rgba(255,255,255,0.1)}
+.ex-close svg{width:26px;height:26px}
+.ex-inner{max-width:860px;width:100%;position:relative}
+.ex-img-wrap{width:100%;aspect-ratio:16/9;border-radius:var(--radius);overflow:hidden;box-shadow:0 0 100px rgba(255,107,157,0.14)}
+.ex-img-wrap img{width:100%;height:100%;object-fit:contain}
+.ex-caption{padding:20px 0 0}
+.ex-title{font-family:var(--font-head);font-size:2.8rem;font-weight:900;letter-spacing:-0.03em;line-height:1}
+.ex-desc{font-size:13px;color:var(--muted);font-style:italic;margin-top:8px;line-height:1.6}
+.ex-artist{font-family:var(--font-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--teal);margin-top:10px}
+#confetti-canvas{position:fixed;inset:0;z-index:300;pointer-events:none}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(60px);background:rgba(30,40,70,0.95);border:1px solid var(--border);border-radius:99px;padding:10px 22px;font-family:var(--font-mono);font-size:11px;color:var(--text);z-index:400;transition:transform 0.3s ease;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+.mobile-notice{display:none;position:fixed;inset:0;z-index:500;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:32px;text-align:center}
+@media(max-width:900px){.mobile-notice{display:flex}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 4px 18px rgba(255,107,157,0.25)}50%{box-shadow:0 4px 32px rgba(255,107,157,0.55)}}
+.btn-primary.generating{animation:pulse-glow 1s ease-in-out infinite}
 
-  /* ─── Reset ─────────────────────────────────────────────── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-body);
-    overflow: hidden;
-    -webkit-font-smoothing: antialiased;
-  }
+/* ── Settings Modal ── */
+#settings-modal{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0.85);backdrop-filter:blur(28px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+#settings-modal.open{opacity:1;pointer-events:all}
+.settings-panel{background:rgba(15,23,42,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:24px;width:520px;max-height:80vh;overflow-y:auto;padding:32px;display:flex;flex-direction:column;gap:24px;box-shadow:0 30px 80px rgba(0,0,0,0.6)}
+.settings-panel::-webkit-scrollbar{width:3px}
+.settings-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.settings-header{display:flex;align-items:center;justify-content:space-between}
+.settings-title{font-family:var(--font-head);font-size:1.6rem;font-weight:900;letter-spacing:-0.02em}
+.settings-close{background:none;border:none;color:var(--muted);cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:color 0.2s,background 0.2s}
+.settings-close:hover{color:#fff;background:rgba(255,255,255,0.08)}
+.settings-close svg{width:20px;height:20px}
+.settings-section{display:flex;flex-direction:column;gap:12px}
+.settings-section-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--border)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.settings-row label{font-size:12px;color:rgba(255,255,255,0.7);flex:1}
+.settings-row .settings-input{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:10px;padding:7px 12px;border-radius:8px;width:260px;outline:none;transition:border-color 0.2s;letter-spacing:0.04em}
+.settings-row .settings-input:focus{border-color:var(--teal)}
+.settings-row .settings-input.pink:focus{border-color:var(--pink)}
+.settings-btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.s-btn{flex:1;min-width:100px;height:36px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.05);color:var(--text);font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.18s}
+.s-btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2)}
+.s-btn.pink{border-color:rgba(255,107,157,0.4);color:var(--pink)}
+.s-btn.pink:hover{background:rgba(255,107,157,0.12)}
+.s-btn.teal{border-color:rgba(78,205,196,0.4);color:var(--teal)}
+.s-btn.teal:hover{background:rgba(78,205,196,0.12)}
+.s-btn.red{border-color:rgba(248,113,113,0.4);color:#f87171}
+.s-btn.red:hover{background:rgba(248,113,113,0.1)}
+.s-btn svg{width:13px;height:13px}
+.version-stamp{font-family:var(--font-mono);font-size:9px;color:var(--muted);text-align:center;padding-top:8px;letter-spacing:0.1em}
+.version-stamp span{color:var(--teal)}
+/* hidden file input for JSON import */
+#json-import-input{display:none}
 
-  /* ─── Animated Mesh Background ──────────────────────────── */
-  .mesh {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background:
-      radial-gradient(ellipse 60% 50% at 10% 20%, rgba(255,107,157,0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 60% at 90% 80%, rgba(78,205,196,0.10) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,230,109,0.04) 0%, transparent 70%);
-    animation: meshShift 12s ease-in-out infinite alternate;
-  }
-  @keyframes meshShift {
-    0%   { filter: hue-rotate(0deg) brightness(1); }
-    100% { filter: hue-rotate(20deg) brightness(1.05); }
-  }
+/* ── Gallery Manager Modal ── */
+#gallery-modal{position:fixed;inset:0;z-index:220;background:rgba(5,10,25,0.96);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity 0.3s}
+#gallery-modal.open{opacity:1;pointer-events:all}
+.gm-header{display:flex;align-items:center;justify-content:space-between;padding:22px 32px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.gm-title-wrap{display:flex;align-items:baseline;gap:14px}
+.gm-title{font-family:var(--font-head);font-size:1.8rem;font-weight:900;letter-spacing:-0.03em}
+.gm-count{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:0.08em}
+.gm-header-right{display:flex;align-items:center;gap:10px}
+.gm-search{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:12px;padding:7px 14px;border-radius:99px;width:220px;outline:none;transition:border-color 0.2s}
+.gm-search::placeholder{color:var(--muted)}
+.gm-search:focus{border-color:var(--teal)}
+.gm-sort{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:10px;padding:7px 12px;border-radius:99px;outline:none;cursor:pointer;letter-spacing:0.06em}
+.gm-close{background:none;border:none;color:var(--muted);cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:color 0.2s,background 0.2s;flex-shrink:0}
+.gm-close:hover{color:#fff;background:rgba(255,255,255,0.08)}
+.gm-close svg{width:22px;height:22px}
+.gm-body{display:flex;flex:1;overflow:hidden}
+/* Grid pane */
+.gm-grid-pane{flex:1;overflow-y:auto;padding:24px 28px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;align-content:start}
+.gm-grid-pane::-webkit-scrollbar{width:4px}
+.gm-grid-pane::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.gm-card{border-radius:14px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;transition:all 0.18s;background:#111;aspect-ratio:1}
+.gm-card:hover{transform:scale(1.025);border-color:rgba(255,255,255,0.15)}
+.gm-card.selected{border-color:var(--pink);box-shadow:0 0 0 3px rgba(255,107,157,0.25)}
+.gm-card img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity 0.3s}
+.gm-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.85) 0%,transparent 55%);opacity:0;transition:opacity 0.2s;display:flex;flex-direction:column;justify-content:flex-end;padding:10px}
+.gm-card:hover .gm-card-overlay,.gm-card.selected .gm-card-overlay{opacity:1}
+.gm-card-title{font-family:var(--font-head);font-size:12px;font-weight:700;line-height:1.2;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gm-card-artist{font-size:9px;color:rgba(255,255,255,0.6);margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gm-card-fmt{position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);border-radius:5px;font-size:7px;font-family:var(--font-mono);text-transform:uppercase;color:rgba(255,255,255,0.7);padding:2px 6px;letter-spacing:0.06em}
+.gm-card-del{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.85);border:none;cursor:pointer;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s}
+.gm-card:hover .gm-card-del{opacity:1}
+.gm-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px 0;color:rgba(255,255,255,0.18)}
+.gm-empty svg{width:56px;height:56px;opacity:0.3}
+.gm-empty p{font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase}
+/* Editor pane */
+.gm-editor{width:300px;flex-shrink:0;border-left:1px solid var(--border);padding:24px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+.gm-editor::-webkit-scrollbar{width:3px}
+.gm-editor::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.gm-editor-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:rgba(255,255,255,0.18);text-align:center}
+.gm-editor-empty svg{width:40px;height:40px;opacity:0.3}
+.gm-editor-empty p{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;line-height:1.6}
+.gm-editor-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block;border:1px solid var(--border)}
+.gm-editor-section-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.gm-editor-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font-body);font-size:12px;padding:8px 11px;outline:none;transition:border-color 0.2s}
+.gm-editor-input:focus{border-color:var(--pink)}
+.gm-editor-textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font-body);font-size:11px;padding:8px 11px;outline:none;resize:none;height:90px;transition:border-color 0.2s;line-height:1.5}
+.gm-editor-textarea:focus{border-color:var(--teal)}
+.gm-editor-input::placeholder,.gm-editor-textarea::placeholder{color:var(--muted)}
+.gm-editor-prompt{width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:9px;color:var(--muted);font-family:var(--font-mono);font-size:9px;padding:8px 11px;resize:none;height:80px;line-height:1.5;outline:none;transition:border-color 0.2s}
+.gm-editor-prompt:focus{border-color:rgba(167,139,250,0.4)}
+.gm-save-btn{width:100%;height:38px;border:none;border-radius:10px;background:var(--pink);color:#fff;cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;box-shadow:0 4px 16px rgba(255,107,157,0.2);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.gm-save-btn:hover{background:#ff528d;transform:translateY(-1px)}
+.gm-save-btn.saved{background:var(--teal);color:#000}
+.gm-action-row{display:flex;gap:8px}
+.gm-action-btn{flex:1;height:34px;border:1px solid var(--border);border-radius:9px;background:rgba(255,255,255,0.04);color:var(--muted);font-family:var(--font-mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.16s}
+.gm-action-btn:hover{background:rgba(255,255,255,0.09);color:var(--text);border-color:rgba(255,255,255,0.18)}
+.gm-action-btn.danger{border-color:rgba(248,113,113,0.3);color:#f87171}
+.gm-action-btn.danger:hover{background:rgba(248,113,113,0.1)}
+.gm-action-btn svg{width:12px;height:12px}
+.gm-nav-row{display:flex;align-items:center;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border)}
+.gm-nav-info{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:0.06em}
+.gm-nav-btns{display:flex;gap:6px}
+.gm-nav-btn{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;color:var(--muted);width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.gm-nav-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+.gm-nav-btn svg{width:14px;height:14px}
 
-  /* ─── App Shell ──────────────────────────────────────────── */
-  #app {
-    position: relative; z-index: 1;
-    width: 100vw; height: 100vh;
-    display: grid;
-    grid-template-columns: 250px 1fr 200px;
-    grid-template-rows: 70px 1fr 145px;
-    gap: 14px;
-    padding: 14px;
-  }
 
-  /* ─── Glass Panel ────────────────────────────────────────── */
-  .panel {
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
+/* ── Compact / Focus Mode ── */
+/* Toggle by adding class 'compact' to #app */
 
-  /* ─── Header ─────────────────────────────────────────────── */
-  #header {
-    grid-column: 1 / -1;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px;
-  }
-  .logo-mark {
-    width: 32px; height: 32px; border-radius: 10px;
-    background: linear-gradient(135deg, var(--pink), var(--teal));
-    box-shadow: 0 0 20px rgba(255,107,157,0.3);
-    flex-shrink: 0;
-  }
-  .logo-text {
-    font-family: var(--font-head);
-    font-size: 1.5rem; font-weight: 900;
-    letter-spacing: -0.03em;
-    background: linear-gradient(90deg, #fff 40%, var(--pink));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-left: 12px;
-  }
-  .header-status {
-    display: flex; align-items: center; gap: 12px;
-  }
-  .status-pill {
-    font-family: var(--font-mono);
-    font-size: 10px; letter-spacing: 0.1em;
-    padding: 6px 14px; border-radius: 99px;
-    background: var(--glass); border: 1px solid var(--border);
-  }
-  .status-pill span { color: var(--teal); }
-  .icon-btn {
-    background: none; border: none; color: var(--muted);
-    cursor: pointer; width: 36px; height: 36px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    transition: color 0.2s, background 0.2s;
-  }
-  .icon-btn:hover { color: var(--text); background: var(--glass); }
-  .icon-btn svg { width: 18px; height: 18px; }
-  /* API key input area */
-  .api-area {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .api-input {
-    background: var(--glass); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--font-mono); font-size: 10px;
-    padding: 6px 12px; border-radius: 99px; width: 180px;
-    outline: none; letter-spacing: 0.05em;
-    transition: border-color 0.2s;
-  }
-  .api-input::placeholder { color: var(--muted); }
-  .api-input:focus { border-color: var(--pink); }
+/* Compact mode: narrower sidebar, hide right panel, shorter footer */
+#app.compact{grid-template-columns:240px 1fr;grid-template-rows:58px 1fr 110px}
+#app.compact #right-panel{display:none}
+#app.compact #exhibit{grid-column:2;grid-row:2}
+#app.compact #gallery-bar{grid-column:1/-1}
+#app.compact #header{grid-column:1/-1}
 
-  /* ─── Sidebar ────────────────────────────────────────────── */
-  #sidebar {
-    grid-row: 2;
-    display: flex; flex-direction: column; gap: 12px;
-    padding: 18px; overflow-y: auto;
-  }
-  #sidebar::-webkit-scrollbar { width: 3px; }
-  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* Compact sidebar: tighter spacing, smaller chips */
+#app.compact #sidebar{gap:7px;padding:12px}
+#app.compact .chip{font-size:8.5px;padding:4px 5px}
+#app.compact .art-textarea{height:54px;font-size:10px}
+#app.compact .art-input{height:28px;font-size:10px}
+#app.compact .btn-primary{height:34px;font-size:9px}
+#app.compact .btn-teal{height:30px;font-size:9px}
+#app.compact .section-label{font-size:8px}
+#app.compact .divider{margin:1px 0}
+#app.compact .remix-card{padding:9px;gap:7px}
+#app.compact .remix-card p{font-size:8.5px}
+#app.compact .upload-zone{padding:7px}
 
-  .section-label {
-    font-family: var(--font-mono);
-    font-size: 9px; letter-spacing: 0.15em;
-    text-transform: uppercase; color: var(--muted);
-    font-weight: 500;
-  }
-  .section-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px;
-  }
-  .surprise-btn {
-    background: none; border: none; cursor: pointer;
-    font-family: var(--font-mono); font-size: 8px;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--teal); transition: color 0.2s;
-  }
-  .surprise-btn:hover { color: #fff; }
+/* Chip sections collapse to horizontal scroll rows in compact */
+#app.compact .chip-grid-2,
+#app.compact .chip-grid-3{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:4px;padding-bottom:3px;scrollbar-width:none}
+#app.compact .chip-grid-2::-webkit-scrollbar,
+#app.compact .chip-grid-3::-webkit-scrollbar{display:none}
+#app.compact .chip{flex-shrink:0;white-space:nowrap}
 
-  /* Explain textarea */
-  .art-textarea {
-    width: 100%; height: 72px; resize: none;
-    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); color: var(--text);
-    font-family: var(--font-body); font-size: 11px;
-    padding: 10px 12px; outline: none;
-    transition: border-color 0.2s;
-    line-height: 1.5;
-  }
-  .art-textarea::placeholder { color: var(--muted); }
-  .art-textarea:focus { border-color: rgba(255,107,157,0.5); }
+/* Focus mode: hide sidebar entirely, exhibit takes full width */
+/* Focus mode: full-width exhibit */
+#app.focus{grid-template-columns:1fr;grid-template-rows:58px 1fr 100px}
+#app.focus #sidebar{display:none}
+#app.focus #right-panel{display:none}
+#app.focus #exhibit{grid-column:1;grid-row:2}
+#app.focus #gallery-bar{grid-column:1}
+#app.focus #header{grid-column:1}
+#app.focus #header{padding:0 16px}
 
-  /* Chip grid */
-  .chip-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
-  }
-  .chip {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border);
-    border-radius: 8px; color: rgba(255,255,255,0.6);
-    font-family: var(--font-body); font-size: 10px;
-    padding: 6px 8px; cursor: pointer; text-align: center;
-    transition: all 0.15s; line-height: 1.2;
-  }
-  .chip:hover { background: rgba(255,255,255,0.1); color: #fff; }
-  .chip.active-pink  { background: var(--pink); border-color: var(--pink); color: #fff; font-weight: 600; }
-  .chip.active-teal  { background: var(--teal); border-color: var(--teal); color: #000; font-weight: 600; }
-  .chip.active-white { background: #fff; border-color: #fff; color: #000; font-weight: 600; }
-  .chip.format-chip  { flex-direction: column; display: flex; align-items: center; gap: 2px; }
-  .chip .chip-sub { font-size: 7px; opacity: 0.5; font-weight: 400; }
+/* Compact header */
+#app.compact #header,
+#app.focus #header{height:58px}
+#app.compact .logo-text{font-size:1.2rem}
+#app.compact .status-pill{display:none}
 
-  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+/* Compact gallery footer */
+#app.compact #gallery-bar{padding:0 12px}
+#app.compact .thumb{width:72px;height:62px}
 
-  /* Inputs */
-  .art-input {
-    width: 100%; height: 34px;
-    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); color: var(--text);
-    font-family: var(--font-body); font-size: 11px;
-    padding: 0 12px; outline: none;
-    transition: border-color 0.2s;
-  }
-  .art-input::placeholder { color: var(--muted); }
-  .art-input:focus { border-color: rgba(78,205,196,0.5); }
+/* Mode toggle buttons styling */
+.mode-btn{background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;height:30px;padding:0 10px;border-radius:8px;display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.18s;white-space:nowrap}
+.mode-btn:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
+.mode-btn.active{background:rgba(78,205,196,0.15);border-color:rgba(78,205,196,0.4);color:var(--teal)}
+.mode-btn svg{width:12px;height:12px;flex-shrink:0}
+.mode-divider{width:1px;height:20px;background:var(--border);flex-shrink:0}
 
-  /* CTA buttons */
-  .btn-primary {
-    width: 100%; height: 40px; border: none; border-radius: var(--radius-sm);
-    background: var(--pink); color: #fff; cursor: pointer;
-    font-family: var(--font-mono); font-size: 10px;
-    letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500;
-    box-shadow: 0 4px 20px rgba(255,107,157,0.25);
-    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
-  }
-  .btn-primary:hover:not(:disabled) { background: #ff528d; transform: translateY(-1px); box-shadow: 0 6px 25px rgba(255,107,157,0.35); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+/* Smooth transitions when switching modes */
+#app{transition:grid-template-columns 0.25s ease, grid-template-rows 0.25s ease}
+#sidebar,#right-panel{transition:opacity 0.2s}
 
-  .btn-teal {
-    width: 100%; height: 36px; border: none; border-radius: var(--radius-sm);
-    background: var(--teal); color: #000; cursor: pointer;
-    font-family: var(--font-mono); font-size: 10px;
-    letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
-    box-shadow: 0 4px 18px rgba(78,205,196,0.2);
-    transition: all 0.2s;
-  }
-  .btn-teal:hover:not(:disabled) { background: #3dbdb4; transform: translateY(-1px); }
-  .btn-teal:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-  /* Remix card */
-  .remix-card {
-    background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(255,107,157,0.10));
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: var(--radius-sm);
-    padding: 14px; display: flex; flex-direction: column; gap: 10px;
-  }
-  .remix-card-header {
-    display: flex; align-items: center; gap: 8px;
-    color: var(--pink);
-    font-family: var(--font-mono); font-size: 10px;
-    letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
-  }
-  .remix-card p {
-    font-size: 10px; color: var(--muted); line-height: 1.5;
-  }
-
-  /* ─── Main Exhibit ───────────────────────────────────────── */
-  #exhibit {
-    grid-row: 2; position: relative;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .exhibit-frame {
-    width: 100%; height: 100%;
-    border-radius: var(--radius);
-    border: 6px solid rgba(255,255,255,0.15);
-    overflow: hidden; background: #000;
-    display: flex; align-items: center; justify-content: center;
-    position: relative;
-    box-shadow: 0 0 60px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
-  }
-  #exhibit-img {
-    width: 100%; height: 100%; object-fit: contain;
-    transition: opacity 0.4s ease;
-  }
-  .exhibit-overlay {
-    position: absolute; inset: 0;
-    background: rgba(0,0,0,0.45);
-    opacity: 0; transition: opacity 0.25s;
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-  }
-  .exhibit-frame:hover .exhibit-overlay { opacity: 1; }
-  .exhibit-meta {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 20px;
-    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
-    pointer-events: none;
-  }
-  .exhibit-title {
-    font-family: var(--font-head);
-    font-size: 1.6rem; font-weight: 900; letter-spacing: -0.02em;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-  }
-  .exhibit-artist {
-    font-size: 11px; color: rgba(255,255,255,0.65);
-    font-style: italic; margin-top: 2px;
-  }
-  .exhibit-empty {
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
-    color: rgba(255,255,255,0.15);
-  }
-  .exhibit-empty svg { width: 56px; height: 56px; opacity: 0.2; }
-  .exhibit-empty p { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
-
-  /* Nav arrows */
-  .nav-arrows {
-    position: absolute; left: 10px; right: 10px; top: 50%; transform: translateY(-50%);
-    display: flex; justify-content: space-between; pointer-events: none;
-  }
-  .nav-arrow {
-    pointer-events: all;
-    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);
-    color: #fff; width: 38px; height: 38px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: all 0.2s;
-    backdrop-filter: blur(4px);
-  }
-  .nav-arrow:hover { background: rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.3); }
-  .nav-arrow svg { width: 18px; height: 18px; }
-
-  /* overlay btn */
-  .ov-btn {
-    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
-    border-radius: var(--radius-sm); color: #fff;
-    font-family: var(--font-body); font-size: 11px; font-weight: 500;
-    padding: 8px 16px; cursor: pointer; backdrop-filter: blur(6px);
-    display: flex; align-items: center; gap: 6px;
-    transition: background 0.2s;
-  }
-  .ov-btn:hover { background: rgba(255,255,255,0.25); }
-  .ov-btn svg { width: 14px; height: 14px; }
-
-  /* Loading spinner */
-  .spinner-wrap {
-    display: flex; flex-direction: column; align-items: center; gap: 16px;
-  }
-  .spinner {
-    width: 56px; height: 56px; border-radius: 50%;
-    border: 3px solid rgba(255,107,157,0.15);
-    border-top-color: var(--pink);
-    animation: spin 0.9s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner-label {
-    font-family: var(--font-mono); font-size: 10px;
-    letter-spacing: 0.15em; text-transform: uppercase; color: var(--pink);
-  }
-  .spinner-sub { font-size: 9px; color: var(--muted); margin-top: 4px; text-align: center; }
-
-  /* ─── Right Panel ───────────────────────────────────────── */
-  #right-panel {
-    grid-row: 2;
-    padding: 20px; display: flex; flex-direction: column; gap: 0;
-    align-items: center;
-  }
-  .stat-block { text-align: center; padding: 16px 0; }
-  .stat-num {
-    font-family: var(--font-head);
-    font-size: 2.4rem; font-weight: 900; color: var(--teal);
-    line-height: 1;
-  }
-  .stat-label {
-    font-family: var(--font-mono); font-size: 9px;
-    letter-spacing: 0.15em; text-transform: uppercase;
-    color: var(--muted); margin-top: 4px;
-  }
-  .curator-block { text-align: center; padding: 16px 0; }
-  .curator-name { font-weight: 700; font-size: 14px; }
-  .notes-block { padding: 16px 0; }
-  .notes-text {
-    font-size: 11px; line-height: 1.6; color: var(--muted);
-    font-style: italic;
-  }
-  .reset-btn {
-    margin-top: auto; background: none; border: none;
-    color: rgba(255,255,255,0.2); cursor: pointer;
-    font-family: var(--font-body); font-size: 10px;
-    transition: color 0.2s; padding: 8px;
-  }
-  .reset-btn:hover { color: #f87171; }
-
-  /* ─── Gallery Footer ────────────────────────────────────── */
-  #gallery-bar {
-    grid-column: 1 / -1;
-    display: flex; align-items: center; gap: 12px;
-    padding: 0 20px; overflow: hidden;
-  }
-  .gallery-label {
-    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
-    letter-spacing: 0.2em; text-transform: uppercase;
-    color: var(--muted); writing-mode: vertical-rl;
-    transform: rotate(180deg); flex-shrink: 0;
-  }
-  .gallery-scroll {
-    flex: 1; overflow-x: auto; overflow-y: hidden;
-    display: flex; align-items: center;
-    height: 100%; padding: 12px 0;
-  }
-  .gallery-scroll::-webkit-scrollbar { height: 3px; }
-  .gallery-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .gallery-items { display: flex; gap: 10px; align-items: center; }
-  .thumb {
-    width: 88px; height: 80px; border-radius: 12px; overflow: hidden;
-    cursor: pointer; position: relative; flex-shrink: 0;
-    border: 2px solid transparent; transition: all 0.2s;
-    opacity: 0.55;
-  }
-  .thumb:hover { opacity: 0.85; transform: scale(1.04); }
-  .thumb.active {
-    border-color: var(--pink);
-    box-shadow: 0 0 0 3px rgba(255,107,157,0.2);
-    opacity: 1;
-  }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .thumb-format {
-    position: absolute; top: 4px; left: 4px;
-    background: rgba(0,0,0,0.5); border-radius: 4px;
-    font-size: 6px; font-family: var(--font-mono);
-    letter-spacing: 0.05em; text-transform: uppercase;
-    color: rgba(255,255,255,0.7); padding: 2px 4px;
-  }
-  .thumb-title {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,0.65); padding: 3px 5px;
-    font-size: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    color: rgba(255,255,255,0.8);
-  }
-  .thumb-del {
-    position: absolute; top: 4px; right: 4px;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: #ef4444; border: none; cursor: pointer;
-    color: #fff; font-size: 10px; line-height: 1;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.15s;
-  }
-  .thumb:hover .thumb-del { opacity: 1; }
-  .gallery-curator {
-    text-align: right; flex-shrink: 0;
-    font-family: var(--font-mono);
-  }
-  .gallery-curator .gc-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
-  .gallery-curator .gc-name  { font-size: 11px; color: var(--pink); font-weight: 600; margin-top: 2px; }
-
-  /* ─── Exhibition Fullscreen ─────────────────────────────── */
-  #exhibition-modal {
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.92); backdrop-filter: blur(24px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 48px;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.35s;
-  }
-  #exhibition-modal.open { opacity: 1; pointer-events: all; }
-  .ex-close {
-    position: absolute; top: 28px; right: 28px;
-    background: none; border: none; color: var(--muted);
-    cursor: pointer; width: 44px; height: 44px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; transition: color 0.2s, background 0.2s;
-  }
-  .ex-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
-  .ex-close svg { width: 26px; height: 26px; }
-  .ex-inner {
-    max-width: 900px; width: 100%;
-    position: relative;
-  }
-  .ex-img-wrap {
-    width: 100%; aspect-ratio: 16/9;
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: 0 0 120px rgba(255,107,157,0.15);
-  }
-  .ex-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
-  .ex-caption { padding: 24px 0 0; }
-  .ex-title {
-    font-family: var(--font-head); font-size: 3rem; font-weight: 900;
-    letter-spacing: -0.03em; line-height: 1;
-  }
-  .ex-desc { font-size: 14px; color: var(--muted); font-style: italic; margin-top: 8px; line-height: 1.6; }
-  .ex-artist { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); margin-top: 12px; }
-
-  /* ─── Confetti canvas ───────────────────────────────────── */
-  #confetti-canvas {
-    position: fixed; inset: 0; z-index: 300;
-    pointer-events: none; width: 100%; height: 100%;
-  }
-
-  /* ─── Spinner overlay for loading state ─────────────────── */
-  .dimmed { opacity: 0.3; pointer-events: none; }
-
-  /* ─── Spin for remix button ─────────────────────────────── */
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 4px 20px rgba(255,107,157,0.25); }
-    50% { box-shadow: 0 4px 35px rgba(255,107,157,0.5); }
-  }
-  .btn-primary.generating { animation: pulse-glow 1s ease-in-out infinite; }
-
-  /* ─── Responsive notice ─────────────────────────────────── */
-  .mobile-notice {
-    display: none; position: fixed; inset: 0; z-index: 500;
-    background: var(--bg); align-items: center; justify-content: center;
-    flex-direction: column; gap: 16px; padding: 32px; text-align: center;
-  }
-  @media (max-width: 900px) {
-    .mobile-notice { display: flex; }
-  }
 </style>
 </head>
 <body>
-
-<!-- Mobile fallback -->
 <div class="mobile-notice">
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-    <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/>
-  </svg>
-  <p style="font-family:var(--font-head);font-size:1.5rem;font-weight:900;">Little DaVinci</p>
-  <p style="font-size:13px;color:var(--muted);max-width:280px;line-height:1.6;">This app is designed for desktop. Please open it on a wider screen for the full experience.</p>
+  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+  <p style="font-family:var(--font-head);font-size:1.4rem;font-weight:900">Little DaVinci</p>
+  <p style="font-size:13px;color:var(--muted);max-width:270px;line-height:1.6">Designed for desktop. Please open on a wider screen.</p>
 </div>
 
-<canvas id="confetti-canvas"></canvas>
-<div class="mesh"></div>
+<!-- Hidden key inputs consumed by existing JS — values set via Settings modal -->
+<input type="hidden" id="gemini-key">
+<input type="hidden" id="groq-key">
 
+<canvas id="confetti-canvas"></canvas>
+<div id="toast"></div>
+<div class="mesh"></div>
 <div id="app">
 
-  <!-- HEADER -->
-  <header id="header" class="panel">
-    <div style="display:flex;align-items:center;gap:0">
-      <div class="logo-mark"></div>
-      <span class="logo-text">Little DaVinci</span>
+<header id="header" class="panel">
+  <div class="logo-wrap">
+    <div class="logo-mark"></div>
+    <span class="logo-text">Little DaVinci</span>
+  </div>
+  <div class="header-right">
+    <div class="status-pill">Engine: <span id="engine-label">Imagen 4</span></div>
+    <div class="mode-divider"></div>
+    <button class="mode-btn active" id="mode-full-btn" title="Full layout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+      Full
+    </button>
+    <button class="mode-btn" id="mode-compact-btn" title="Compact layout — smaller controls">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
+      Compact
+    </button>
+    <button class="mode-btn" id="mode-focus-btn" title="Focus mode — exhibit only">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+      Focus
+    </button>
+    <div class="mode-divider"></div>
+    <div class="status-pill" style="color:var(--muted);font-size:9px">v3.4.0</div>
+    <button class="icon-btn" id="gallery-mgr-btn" title="Gallery Manager">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </button>
+    <button class="icon-btn" id="settings-btn" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="icon-btn" id="exhibit-toggle-btn" title="Exhibition Mode">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+    </button>
+  </div>
+</header>
+
+<aside id="sidebar" class="panel">
+  <div class="section-header">
+    <span class="section-label">Curate Inspiration</span>
+    <button class="surprise-btn" id="surprise-btn">&#10022; Surprise Me</button>
+  </div>
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+      <label class="section-label" style="color:var(--pink)">Describe Your Art</label>
+      <button id="clear-explanation" style="font-size:8px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;display:none">Clear</button>
     </div>
-    <div class="header-status">
-      <div class="api-area">
-        <input class="api-input" id="groq-key" type="password" placeholder="Groq API Key (for Remix)…" autocomplete="off">
+    <textarea class="art-textarea" id="explanation" placeholder="E.g. An astronaut riding a unicorn through a neon jungle at sunset..."></textarea>
+  </div>
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+      <label class="section-label" style="color:var(--purple)">Photo Style Transfer</label>
+      <span id="photo-badge" style="display:none" class="photo-mode-badge">&#9679; Photo Mode</span>
+    </div>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="photo-input" accept="image/*">
+      <img class="upload-preview" id="upload-preview" alt="Reference photo">
+      <div class="upload-text" id="upload-text">Upload photo &rarr; real style transfer via Gemini</div>
+      <button class="upload-clear" id="upload-clear">&#10005; Remove photo</button>
+    </div>
+  </div>
+  <div>
+    <label class="section-label" style="display:block;margin-bottom:6px">Output Format</label>
+    <div class="chip-grid-2" id="format-grid"></div>
+  </div>
+  <div class="divider"></div>
+  <div id="theme-section"><label class="section-label" style="display:block;margin-bottom:6px">Theme</label><div class="chip-grid-3" id="theme-grid"></div></div>
+  <div id="genre-section"><label class="section-label" style="display:block;margin-bottom:6px">Style</label><div class="chip-grid-3" id="genre-grid"></div></div>
+  <div id="detail-section"><label class="section-label" style="display:block;margin-bottom:6px">Mood</label><div class="chip-grid-3" id="detail-grid"></div></div>
+  <div id="palette-section"><label class="section-label" style="display:block;margin-bottom:6px">Color Palette</label><div class="chip-grid-3" id="palette-grid"></div></div>
+  <div id="subject-section"><label class="section-label" style="display:block;margin-bottom:6px">Subject</label><div class="chip-grid-3" id="subject-grid"></div></div>
+  <div class="divider"></div>
+  <div style="display:flex;flex-direction:column;gap:7px">
+    <input class="art-input" id="extras" placeholder="Extra details (e.g. with a tiny dragon, rain falling)...">
+    <input class="art-input" id="artist-name" placeholder="Artist name...">
+    <div class="prompt-preview" id="prompt-preview"></div>
+    <button class="btn-primary" id="curate-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Curate Art
+    </button>
+  </div>
+  <div class="remix-card">
+    <div class="remix-card-header">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Remix Engine
+    </div>
+    <p>Groq analyses your gallery and crafts a brand-new concept. Imagen 4 then renders it.</p>
+    <button class="btn-teal" id="remix-btn">Generate Remix</button>
+  </div>
+</aside>
+
+<main id="exhibit">
+  <div class="exhibit-frame" id="exhibit-frame">
+    <div id="loading-state" style="display:none">
+      <div class="spinner-wrap">
+        <div class="spinner"></div>
+        <div>
+          <div class="spinner-label" id="loading-label">Generating with Imagen 4</div>
+          <div class="spinner-sub" id="loading-sub">Crafting your masterpiece...</div>
+          <div class="spinner-progress"><div class="spinner-progress-bar" id="progress-bar"></div></div>
+        </div>
       </div>
-      <div class="status-pill">Remix: <span id="remix-status">Standby</span></div>
-      <button class="icon-btn" id="exhibit-toggle-btn" title="Exhibition Mode">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+    </div>
+    <div id="empty-state" class="exhibit-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <p>Gallery Empty</p>
+      <p style="font-size:10px;color:var(--muted);margin-top:4px;font-family:var(--font-body);letter-spacing:0;text-transform:none">Add your Gemini API key and curate your first piece</p>
+    </div>
+    <img id="exhibit-img" src="" alt="Current Exhibit" style="display:none">
+    <div class="exhibit-overlay" id="exhibit-overlay">
+      <button class="ov-btn" id="regenerate-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        Regenerate
+      </button>
+      <button class="ov-btn export-btn" id="export-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export PNG
       </button>
     </div>
-  </header>
-
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="panel">
-    <div class="section-header">
-      <span class="section-label">Curate Inspiration</span>
-      <button class="surprise-btn" id="surprise-btn">✦ Surprise Me</button>
+    <div class="exhibit-meta" id="exhibit-meta" style="display:none">
+      <div class="exhibit-title" id="exhibit-title"></div>
+      <div class="exhibit-artist" id="exhibit-artist"></div>
     </div>
+  </div>
+  <div class="nav-arrows">
+    <button class="nav-arrow" id="prev-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button class="nav-arrow" id="next-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+  </div>
+</main>
 
-    <!-- Explain box -->
-    <div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label class="section-label" style="color:var(--pink)">Explain Your Art</label>
-        <button id="clear-explanation" style="font-size:8px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;display:none">Clear</button>
-      </div>
-      <textarea class="art-textarea" id="explanation" placeholder="Describe what you want… (e.g. A cute robot holding a flower in space)"></textarea>
+<aside id="right-panel" class="panel">
+  <div class="stat-block">
+    <div class="stat-num" id="artwork-count">0</div>
+    <div class="stat-label">Artworks</div>
+  </div>
+  <div class="divider" style="width:100%"></div>
+  <div class="stat-block">
+    <div class="model-badge" id="model-badge">Imagen 4</div>
+    <div class="stat-label" style="margin-top:6px">Active Model</div>
+  </div>
+  <div class="divider" style="width:100%"></div>
+  <div class="notes-block">
+    <div class="section-label" style="margin-bottom:8px">Exhibition Notes</div>
+    <div class="notes-text">"Young explorers discovering the link between deep space colors and abstract geometry."</div>
+  </div>
+  <button class="reset-btn" id="reset-btn">Reset Gallery</button>
+</aside>
+
+<footer id="gallery-bar" class="panel">
+  <div class="gallery-label">The Gallery</div>
+  <div class="gallery-scroll"><div class="gallery-items" id="gallery-items"></div></div>
+  <div class="gallery-curator">
+    <div class="gc-label">Powered by</div>
+    <div class="gc-name">Google Imagen 4</div>
+  </div>
+</footer>
+</div>
+
+<!-- GALLERY MANAGER MODAL -->
+<div id="gallery-modal">
+  <div class="gm-header">
+    <div class="gm-title-wrap">
+      <div class="gm-title">Gallery</div>
+      <div class="gm-count" id="gm-count">0 artworks</div>
     </div>
-
-    <!-- Format -->
-    <div>
-      <label class="section-label" style="display:block;margin-bottom:8px">Output Format</label>
-      <div class="chip-grid" id="format-grid"></div>
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- Theme -->
-    <div id="theme-section">
-      <label class="section-label" style="display:block;margin-bottom:8px">Theme</label>
-      <div class="chip-grid" id="theme-grid"></div>
-    </div>
-
-    <!-- Genre -->
-    <div id="genre-section">
-      <label class="section-label" style="display:block;margin-bottom:8px">Style</label>
-      <div class="chip-grid" id="genre-grid"></div>
-    </div>
-
-    <!-- Detail -->
-    <div id="detail-section">
-      <label class="section-label" style="display:block;margin-bottom:8px">Mood</label>
-      <div class="chip-grid" id="detail-grid"></div>
-    </div>
-
-    <!-- Extras + Artist + CTA -->
-    <div style="display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--border)">
-      <input class="art-input" id="extras" placeholder="Add extras (e.g. flying cats, rainbow bridge)…">
-      <input class="art-input" id="artist-name" placeholder="Artist name…">
-      <button class="btn-primary" id="curate-btn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        Curate Art
+    <div class="gm-header-right">
+      <input class="gm-search" id="gm-search" placeholder="Search by title or artist..." autocomplete="off">
+      <select class="gm-sort" id="gm-sort">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="title">A–Z Title</option>
+        <option value="artist">A–Z Artist</option>
+      </select>
+      <button class="gm-close" id="gm-close-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-
-    <!-- Remix card -->
-    <div class="remix-card">
-      <div class="remix-card-header">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        Remix Engine
+  </div>
+  <div class="gm-body">
+    <div class="gm-grid-pane" id="gm-grid"></div>
+    <div class="gm-editor" id="gm-editor">
+      <div class="gm-editor-empty" id="gm-editor-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <p>Select an artwork<br>to edit its details</p>
       </div>
-      <p>Blend your curated pieces into a unique AI masterpiece using your Groq key.</p>
-      <button class="btn-teal" id="remix-btn">Generate Remix</button>
-    </div>
-  </aside>
-
-  <!-- MAIN EXHIBIT -->
-  <main id="exhibit">
-    <div class="exhibit-frame" id="exhibit-frame">
-      <!-- Loading state -->
-      <div id="loading-state" style="display:none">
-        <div class="spinner-wrap">
-          <div class="spinner"></div>
-          <div>
-            <div class="spinner-label">Curating Art</div>
-            <div class="spinner-sub">Consulting the digital muse…</div>
+      <div id="gm-editor-content" style="display:none;flex-direction:column;gap:16px">
+        <img class="gm-editor-img" id="gm-editor-img" src="" alt="">
+        <div>
+          <div class="gm-editor-section-label">Title</div>
+          <input class="gm-editor-input" id="gm-ed-title" placeholder="Artwork title...">
+        </div>
+        <div>
+          <div class="gm-editor-section-label">Artist</div>
+          <input class="gm-editor-input" id="gm-ed-artist" placeholder="Artist name...">
+        </div>
+        <div>
+          <div class="gm-editor-section-label">Description</div>
+          <textarea class="gm-editor-textarea" id="gm-ed-desc" placeholder="Artwork description..."></textarea>
+        </div>
+        <div>
+          <div class="gm-editor-section-label">Generation Prompt</div>
+          <textarea class="gm-editor-prompt" id="gm-ed-prompt" placeholder="Original prompt used to generate this artwork..."></textarea>
+        </div>
+        <button class="gm-save-btn" id="gm-save-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Changes
+        </button>
+        <div class="gm-action-row">
+          <button class="gm-action-btn" id="gm-set-active-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+            View in Exhibit
+          </button>
+          <button class="gm-action-btn" id="gm-export-one-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export PNG
+          </button>
+        </div>
+        <div class="gm-action-row">
+          <button class="gm-action-btn danger" id="gm-delete-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Delete Artwork
+          </button>
+        </div>
+        <div class="gm-nav-row">
+          <div class="gm-nav-info" id="gm-nav-info">1 of 1</div>
+          <div class="gm-nav-btns">
+            <button class="gm-nav-btn" id="gm-nav-prev">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="gm-nav-btn" id="gm-nav-next">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
-      <!-- Empty state -->
-      <div id="empty-state" class="exhibit-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <p>Gallery Empty</p>
-        <p style="font-size:10px;color:var(--muted);margin-top:4px;font-family:var(--font-body);letter-spacing:0;text-transform:none">Use the sidebar to curate your first piece</p>
+
+<!-- SETTINGS MODAL -->
+<input type="file" id="json-import-input" accept=".json">
+<div id="settings-modal">
+  <div class="settings-panel">
+    <div class="settings-header">
+      <div class="settings-title">Settings</div>
+      <button class="settings-close" id="settings-close-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- API Keys -->
+    <div class="settings-section">
+      <div class="settings-section-label">API Keys</div>
+      <div class="settings-row">
+        <label>Gemini API Key <span style="color:var(--pink);font-size:9px">(required)</span></label>
+        <input class="settings-input teal" id="s-gemini-key" type="password" placeholder="AIza..." autocomplete="off">
       </div>
-
-      <!-- Image -->
-      <img id="exhibit-img" src="" alt="Current Exhibit" style="display:none" referrerpolicy="no-referrer">
-
-      <!-- Overlay -->
-      <div class="exhibit-overlay" id="exhibit-overlay">
-        <button class="ov-btn" id="regenerate-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-          Regenerate
+      <div class="settings-row">
+        <label>Groq API Key <span style="color:var(--muted);font-size:9px">(remix only)</span></label>
+        <input class="settings-input pink" id="s-groq-key" type="password" placeholder="gsk_..." autocomplete="off">
+      </div>
+      <div class="settings-btn-row">
+        <button class="s-btn teal" id="s-save-keys-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Keys
         </button>
-        <a id="open-full-btn" href="#" target="_blank" rel="noreferrer" class="ov-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-          Open Full
-        </a>
-      </div>
-
-      <!-- Meta -->
-      <div class="exhibit-meta" id="exhibit-meta" style="display:none">
-        <div class="exhibit-title" id="exhibit-title"></div>
-        <div class="exhibit-artist" id="exhibit-artist"></div>
+        <button class="s-btn red" id="s-clear-keys-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          Clear Keys
+        </button>
       </div>
     </div>
 
-    <!-- Nav arrows -->
-    <div class="nav-arrows">
-      <button class="nav-arrow" id="prev-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <button class="nav-arrow" id="next-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+    <!-- Gallery Import / Export -->
+    <div class="settings-section">
+      <div class="settings-section-label">Gallery Data</div>
+      <p style="font-size:11px;color:var(--muted);line-height:1.6">Export your entire gallery as a JSON file to back it up or move it to another device. Import a previously exported file to restore it.</p>
+      <div class="settings-btn-row">
+        <button class="s-btn teal" id="s-export-json-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Gallery JSON
+        </button>
+        <button class="s-btn pink" id="s-import-json-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Gallery JSON
+        </button>
+      </div>
+      <div class="settings-btn-row">
+        <button class="s-btn red" id="s-reset-gallery-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          Reset Gallery
+        </button>
+      </div>
     </div>
-  </main>
 
-  <!-- RIGHT PANEL -->
-  <aside id="right-panel" class="panel">
-    <div class="stat-block">
-      <div class="stat-num" id="artwork-count">0</div>
-      <div class="stat-label">Artworks</div>
+    <!-- About -->
+    <div class="settings-section">
+      <div class="settings-section-label">About</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8">
+        <div><span style="color:var(--text)">Image Engine:</span> Google Imagen 4</div>
+        <div><span style="color:var(--text)">Remix Engine:</span> Groq llama-3.3-70b-versatile</div>
+        <div><span style="color:var(--text)">Photo Transfer:</span> Gemini 2.0 Flash</div>
+        <div><span style="color:var(--text)">Architecture:</span> Single-file PWA, Vanilla JS</div>
+        <div><span style="color:var(--text)">Storage:</span> localStorage (all data stays on device)</div>
+      </div>
     </div>
-    <div class="divider" style="width:100%"></div>
-    <div class="curator-block">
-      <div class="curator-name">The Explorer Class</div>
-      <div class="stat-label">Top Curators</div>
-    </div>
-    <div class="divider" style="width:100%"></div>
-    <div class="notes-block">
-      <div class="section-label" style="margin-bottom:8px">Exhibition Notes</div>
-      <div class="notes-text">"Our young explorers are discovering the link between deep space colors and abstract geometry."</div>
-    </div>
-    <button class="reset-btn" id="reset-btn">Reset Gallery</button>
-  </aside>
 
-  <!-- GALLERY FOOTER -->
-  <footer id="gallery-bar" class="panel">
-    <div class="gallery-label">The Gallery</div>
-    <div class="gallery-scroll">
-      <div class="gallery-items" id="gallery-items"></div>
-    </div>
-    <div class="gallery-curator">
-      <div class="gc-label">Curated by</div>
-      <div class="gc-name">The Explorer Class</div>
-    </div>
-  </footer>
+    <div class="version-stamp">Little DaVinci &nbsp;<span>v3.4.0</span>&nbsp; &mdash;&nbsp; Lazzaro Standard</div>
+  </div>
+</div>
 
-</div><!-- #app -->
 
-<!-- EXHIBITION MODAL -->
 <div id="exhibition-modal">
   <button class="ex-close" id="ex-close-btn">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   </button>
   <div class="ex-inner">
-    <div class="ex-img-wrap">
-      <img id="ex-img" src="" alt="Exhibition" referrerpolicy="no-referrer">
-    </div>
+    <div class="ex-img-wrap"><img id="ex-img" src="" alt="Exhibition"></div>
     <div class="ex-caption">
       <div class="ex-title" id="ex-title"></div>
       <div class="ex-desc" id="ex-desc"></div>
-      <div class="ex-artist" id="ex-artist"></div>
+      <div class="ex-artist" id="ex-artist-ex"></div>
     </div>
   </div>
 </div>
 
-<script>
-// ─── Data ─────────────────────────────────────────────────────────────────
-const THEMES  = ['Cosmic','Enchanted Forest','Underwater','Urban Jungle','Ancient Ruins','Futuristic City'];
-const GENRES  = ['Pop Art','Impressionism','Pixel Art','Oil Painting','Surrealism','Cyberpunk'];
-const DETAILS = ['Neon Lights','Soft Shadows','Golden Hour','Glitch Effect','High Contrast','Minimalist'];
-const FORMATS = [
-  { name:'Square',    width:1024, height:1024, label:'Standard Art' },
-  { name:'Portrait',  width:720,  height:1280, label:'Phone Wallpaper' },
-  { name:'Landscape', width:1280, height:720,  label:'Wall Art' },
-  { name:'Icon',      width:512,  height:512,  label:'App Icon' }
-];
-const INITIAL_ART = [
-  { id:'1', url:'https://image.pollinations.ai/prompt/A%20vibrant%20neon%20cityscape%20with%20cyberpunk%20vibes?width=1024&height=1024&seed=1&nologo=true', title:'Neon Dreams', description:'A vibrant exploration of urban light and shadow using a synthwave color palette.', artist:'Lumina AI', format:'Square' },
-  { id:'2', url:'https://image.pollinations.ai/prompt/An%20ethereal%20forest%20at%20dawn%20with%20glowing%20plants?width=1024&height=1024&seed=2&nologo=true', title:'Ethereal Forest', description:'Soft pastel colors depicting a mythical woodland at dawn.', artist:'Lumina AI', format:'Square' },
-  { id:'3', url:'https://image.pollinations.ai/prompt/Abstract%20geometric%20shapes%20with%20fluid%20gradients?width=1024&height=1024&seed=3&nologo=true', title:'Geometric Flow', description:'Sharp angles meeting fluid gradients in a study of digital motion.', artist:'Lumina AI', format:'Square' }
-];
+<script>// ================================================================
+//  LAYOUT MODES  (declared first so applyMode is available everywhere)
+// ================================================================
+const MODES = ['full','compact','focus'];
+let currentMode = localStorage.getItem('dv_mode') || 'full';
 
-// ─── State ────────────────────────────────────────────────────────────────
-let gallery = [];
-let selTheme  = THEMES[0];
-let selGenre  = GENRES[0];
-let selDetail = DETAILS[0];
-let selFormat = FORMATS[0];
-let curIdx    = 0;
-let isLoading = false;
-
-// ─── Persist ──────────────────────────────────────────────────────────────
-function saveGallery() {
-  localStorage.setItem('davinci_gallery', JSON.stringify(gallery));
-}
-function loadGallery() {
-  try {
-    const raw = localStorage.getItem('davinci_gallery');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch(e) {}
-  return [...INITIAL_ART];
+function applyMode(mode) {
+  const app = document.getElementById('app');
+  MODES.forEach(m => app.classList.remove(m));
+  if (mode !== 'full') app.classList.add(mode);
+  currentMode = mode;
+  localStorage.setItem('dv_mode', mode);
+  const fb = document.getElementById('mode-full-btn');
+  const cb = document.getElementById('mode-compact-btn');
+  const kb = document.getElementById('mode-focus-btn');
+  if (fb) fb.classList.toggle('active',    mode === 'full');
+  if (cb) cb.classList.toggle('active', mode === 'compact');
+  if (kb) kb.classList.toggle('active',   mode === 'focus');
 }
 
-// ─── Chip builders ────────────────────────────────────────────────────────
-function buildChips(containerId, items, getCurrent, onSelect, activeClass) {
-  const el = document.getElementById(containerId);
-  el.innerHTML = '';
-  items.forEach(item => {
-    const btn = document.createElement('button');
-    btn.className = 'chip' + (getCurrent() === item ? ' ' + activeClass : '');
-    btn.textContent = typeof item === 'string' ? item : item.name;
-    if (typeof item !== 'string') {
-      btn.innerHTML = `<span>${item.name}</span><span class="chip-sub">${item.label}</span>`;
-      btn.style.flexDirection = 'column'; btn.style.display = 'flex'; btn.style.alignItems = 'center'; btn.style.gap = '2px';
+
+const THEMES=['Cosmic','Enchanted Forest','Underwater','Urban Jungle','Ancient Ruins','Futuristic City','Desert Dreamscape','Haunted Mansion','Arctic Tundra','Tropical Paradise','Volcanic Island','Cloud Kingdom','Deep Ocean','Autumn Valley','Sakura Garden','Crystal Caves'];
+const GENRES=['Pop Art','Impressionism','Pixel Art','Oil Painting','Surrealism','Cyberpunk','Watercolor','Art Nouveau','Bauhaus','Pointillism','Expressionism','Ink Wash','Retro Futurism','Vaporwave','Studio Ghibli','Comic Book'];
+const DETAILS=['Neon Lights','Soft Shadows','Golden Hour','Glitch Effect','High Contrast','Minimalist','Dreamy Haze','Stormy Drama','Sunrise Glow','Midnight Blue','Foggy Mystery','Sparkle Magic','Cinematic','Ethereal Glow','Vibrant Pop','Dark Moody'];
+const PALETTES=['Pastel Rainbow','Deep Jewel Tones','Monochrome','Warm Sunset','Cool Arctic','Neon Brights','Earth Tones','Cotton Candy','Galaxy Purple','Forest Green','Rose Gold','Electric Blue'];
+const SUBJECTS=['Animals','Fantasy Creatures','Robots','Nature','Architecture','People','Space','Ocean Life','Vehicles','Food & Sweets','Sports','Musical Instruments','Dinosaurs','Superheroes','Fairy Tale','Abstract'];
+const FORMATS=[{name:'Square',ratio:'1:1',label:'Standard Art'},{name:'Portrait',ratio:'3:4',label:'Phone Wallpaper'},{name:'Landscape',ratio:'16:9',label:'Wall Art'},{name:'Icon',ratio:'1:1',label:'App Icon'}];
+
+let gallery=[],selTheme=THEMES[0],selGenre=GENRES[0],selDetail=DETAILS[0],selPalette=PALETTES[0],selSubject=SUBJECTS[0],selFormat=FORMATS[0],curIdx=0,isLoading=false,photoDataURL=null,photoMimeType='image/jpeg';
+
+function saveGallery(){localStorage.setItem('davinci_v3',JSON.stringify(gallery))}
+function loadGallery(){try{const r=localStorage.getItem('davinci_v3');if(r){const p=JSON.parse(r);if(Array.isArray(p)&&p.length>0)return p}}catch(e){}return[]}
+function saveKeys(){const g=document.getElementById('gemini-key').value.trim();const gr=document.getElementById('groq-key').value.trim();if(g)localStorage.setItem('dv_gk',g);if(gr)localStorage.setItem('dv_grk',gr)}
+function loadKeys(){
+  const g=localStorage.getItem('dv_gk')||'';
+  const gr=localStorage.getItem('dv_grk')||'';
+  if(g){ document.getElementById('gemini-key').value=g; }
+  if(gr){ document.getElementById('groq-key').value=gr; }
+}
+
+function buildPrompt(){
+  const exp=document.getElementById('explanation').value.trim();
+  const extras=document.getElementById('extras').value.trim();
+  const parts=[];
+  if(exp)parts.push(exp);
+  parts.push('featuring '+selSubject);
+  parts.push('set in '+selTheme);
+  parts.push('rendered in '+selGenre+' style');
+  parts.push('with a '+selDetail+' mood');
+  parts.push('using a '+selPalette+' color palette');
+  if(extras)parts.push(extras);
+  if(selFormat.name==='Icon')parts.push('clean centered icon design, white background');
+  if(selFormat.name==='Portrait')parts.push('vertical portrait composition');
+  if(selFormat.name==='Landscape')parts.push('wide cinematic panoramic composition');
+  parts.push('highly detailed, vibrant colors, professional quality illustration');
+  return parts.join(', ');
+}
+function updatePromptPreview(){const el=document.getElementById('prompt-preview');el.textContent='-> '+buildPrompt();el.classList.add('visible')}
+
+async function callImagen(prompt,ratio,apiKey){
+  const url='https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key='+apiKey;
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({instances:[{prompt}],parameters:{sampleCount:1,aspectRatio:ratio,personGeneration:'allow_all'}})});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||'Imagen API error '+res.status)}
+  const data=await res.json();
+  const b64=data?.predictions?.[0]?.bytesBase64Encoded;
+  if(!b64)throw new Error('No image in Imagen response');
+  return 'data:image/png;base64,'+b64;
+}
+
+async function callGeminiPhoto(prompt,b64,mime,apiKey){
+  const stylePrompt='You are an AI art generator. Using the uploaded photo as a visual reference, create a NEW original artwork that transforms its composition and subject into this style: '+prompt+'. Generate a high-quality artistic image, not a photograph reproduction.';
+  const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key='+apiKey;
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:mime,data:b64}},{text:stylePrompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||'Gemini photo error '+res.status)}
+  const data=await res.json();
+  const parts=data?.candidates?.[0]?.content?.parts||[];
+  for(const p of parts){if(p.inline_data?.data)return'data:'+(p.inline_data.mime_type||'image/png')+';base64,'+p.inline_data.data}
+  throw new Error('No image in Gemini response')
+}
+
+let progressTimer=null;
+function startProgress(){const bar=document.getElementById('progress-bar');let pct=0;bar.style.width='0%';progressTimer=setInterval(()=>{pct=Math.min(85,pct+(85-pct)*0.04+0.3);bar.style.width=pct+'%'},200)}
+function finishProgress(){clearInterval(progressTimer);document.getElementById('progress-bar').style.width='100%'}
+
+async function addArt(){
+  if(isLoading)return;
+  const apiKey=document.getElementById('gemini-key').value.trim();
+  if(!apiKey){showToast('Enter your Gemini API key in the header first.');return}
+  saveKeys();
+  isLoading=true;
+  const btn=document.getElementById('curate-btn');
+  btn.disabled=true;btn.classList.add('generating');
+  const hasPhoto=!!photoDataURL;
+  document.getElementById('loading-label').textContent=hasPhoto?'Style Transfer via Gemini':'Generating with Imagen 4';
+  document.getElementById('loading-sub').textContent=hasPhoto?'Remixing your photo into art...':'Crafting your masterpiece...';
+  renderExhibit();startProgress();
+  const prompt=buildPrompt();
+  const exp=document.getElementById('explanation').value.trim();
+  const artist=document.getElementById('artist-name').value.trim();
+  const titleBase=exp||selSubject+' \u2013 '+selTheme;
+  const title=titleBase.length>28?titleBase.substring(0,28)+'\u2026':titleBase;
+  try{
+    let dataUrl;
+    if(hasPhoto){
+      const b64=photoDataURL.split(',')[1];
+      try{dataUrl=await callGeminiPhoto(prompt,b64,photoMimeType,apiKey);document.getElementById('model-badge').textContent='Gemini Flash'}
+      catch(err){showToast('Photo model unavailable, using Imagen 4...');console.warn(err);dataUrl=await callImagen(prompt+', inspired by uploaded photo reference',selFormat.ratio,apiKey);document.getElementById('model-badge').textContent='Imagen 4'}
+    }else{
+      dataUrl=await callImagen(prompt,selFormat.ratio,apiKey);
+      document.getElementById('model-badge').textContent='Imagen 4';
+      document.getElementById('engine-label').textContent='Imagen 4';
     }
-    btn.addEventListener('click', () => { onSelect(item); renderChips(); });
+    finishProgress();
+    gallery.push({id:Date.now().toString(),url:dataUrl,title,description:prompt,artist:artist||'Young Artist',format:selFormat.name,isBase64:true});
+    curIdx=gallery.length-1;saveGallery();
+    document.getElementById('explanation').value='';document.getElementById('extras').value='';document.getElementById('artist-name').value='';
+    document.getElementById('clear-explanation').style.display='none';updatePromptPreview();
+    isLoading=false;btn.disabled=false;btn.classList.remove('generating');
+    renderExhibit();renderGallery();
+    fireConfetti([255,107,157],[78,205,196],[255,255,255]);
+  }catch(err){
+    finishProgress();isLoading=false;btn.disabled=false;btn.classList.remove('generating');
+    console.error(err);showToast('Generation failed: '+err.message);renderExhibit();
+  }
+}
+
+async function regenerateCurrent(){
+  const item=gallery[curIdx];if(!item||isLoading)return;
+  const apiKey=document.getElementById('gemini-key').value.trim();
+  if(!apiKey){showToast('Enter your Gemini API key first.');return}
+  isLoading=true;
+  document.getElementById('loading-label').textContent='Regenerating...';
+  document.getElementById('loading-sub').textContent='Creating a fresh variation...';
+  renderExhibit();startProgress();
+  try{
+    const dataUrl=await callImagen(item.description,selFormat.ratio,apiKey);
+    finishProgress();gallery[curIdx]={...item,url:dataUrl};saveGallery();
+  }catch(err){finishProgress();showToast('Regeneration failed: '+err.message)}
+  isLoading=false;renderExhibit();renderGallery();
+}
+
+async function remixArt(){
+  if(gallery.length===0){showToast('Add some art first!');return}
+  const geminiKey=document.getElementById('gemini-key').value.trim();
+  const groqKey=document.getElementById('groq-key').value.trim();
+  if(!geminiKey){showToast('Enter your Gemini API key first.');return}
+  if(!groqKey){showToast('Enter your Groq API key for Remix.');return}
+  saveKeys();
+  const remixBtn=document.getElementById('remix-btn');
+  remixBtn.disabled=true;remixBtn.textContent='Thinking...';
+  const descs=gallery.slice(-6).map(i=>i.description).join('\n');
+  const sys='You are a creative director for "Little DaVinci", a children\'s AI art studio. Given existing artwork descriptions, invent a COMPLETELY NEW magical concept children would love. Respond ONLY with valid JSON (no markdown): {"title":"...","description":"...","prompt":"..."}. The prompt must be vivid and under 60 words.';
+  try{
+    const groqRes=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'system',content:sys},{role:'user',content:'Existing artworks:\n'+descs+'\n\nCreate a unique new concept.'}],temperature:0.92,max_tokens:320})});
+    const groqData=await groqRes.json();
+    const raw=groqData.choices?.[0]?.message?.content||'{}';
+    const concept=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    remixBtn.textContent='Rendering...';
+    const imagePrompt=(concept.prompt||'whimsical colorful children art')+', highly detailed, vibrant, magical, professional illustration';
+    const dataUrl=await callImagen(imagePrompt,'1:1',geminiKey);
+    gallery.push({id:Date.now().toString(),url:dataUrl,title:concept.title||'The Infinite Remix',description:concept.description||imagePrompt,artist:'Groq x Imagen 4',format:'Square',isGenerative:true,isBase64:true});
+    curIdx=gallery.length-1;saveGallery();renderExhibit();renderGallery();
+    fireConfetti([255,107,157],[78,205,196],[255,230,109]);showToast('Remix created!');
+    document.getElementById('model-badge').textContent='Groq x Imagen';
+  }catch(err){console.error(err);showToast('Remix failed: '+err.message)}
+  remixBtn.disabled=false;remixBtn.textContent='Generate Remix';
+}
+
+async function exportPNG(){
+  const item=gallery[curIdx];if(!item)return;
+  showToast('Preparing export...');
+  try{
+    const img=new Image();
+    await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=item.url});
+    const canvas=document.createElement('canvas');
+    canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+    const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
+    const fs=Math.max(12,Math.round(canvas.width*0.013));
+    const wm='Little DaVinci  |  '+item.title+'  |  by '+item.artist;
+    ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(0,canvas.height-fs*2.5,canvas.width,fs*2.5);
+    ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font=fs+'px sans-serif';ctx.textAlign='center';
+    ctx.fillText(wm,canvas.width/2,canvas.height-fs*0.6);
+    canvas.toBlob(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(item.title.replace(/[^a-z0-9]/gi,'_').toLowerCase()||'davinci')+'.png';a.click();URL.revokeObjectURL(a.href);showToast('PNG saved!')},'image/png');
+  }catch(e){console.error(e);showToast('Export failed: '+e.message)}
+}
+
+function buildChips(cid,items,getCur,onSel,ac,cols){
+  const el=document.getElementById(cid);el.className=cols===3?'chip-grid-3':'chip-grid-2';el.innerHTML='';
+  items.forEach(item=>{
+    const isObj=typeof item==='object';
+    const btn=document.createElement('button');
+    btn.className='chip'+(getCur()===item?' '+ac:'');
+    if(isObj)btn.innerHTML='<span>'+item.name+'</span><span class="chip-sub">'+item.label+'</span>';
+    else btn.textContent=item;
+    btn.addEventListener('click',()=>{onSel(item);renderChips();updatePromptPreview()});
     el.appendChild(btn);
   });
 }
-function renderChips() {
-  buildChips('format-grid', FORMATS, () => selFormat, v => selFormat = v, 'active-white');
-  buildChips('theme-grid',  THEMES,  () => selTheme,  v => selTheme  = v, 'active-pink');
-  buildChips('genre-grid',  GENRES,  () => selGenre,  v => selGenre  = v, 'active-teal');
-  buildChips('detail-grid', DETAILS, () => selDetail, v => selDetail  = v, 'active-white');
-  // Dim theme/genre/detail when explanation is active
-  const hasExp = document.getElementById('explanation').value.trim();
-  ['theme-section','genre-section','detail-section'].forEach(id => {
-    document.getElementById(id).style.opacity = hasExp ? '0.3' : '1';
-    document.getElementById(id).style.pointerEvents = hasExp ? 'none' : '';
+function renderChips(){
+  buildChips('format-grid',FORMATS,()=>selFormat,v=>selFormat=v,'active-white',2);
+  buildChips('theme-grid',THEMES,()=>selTheme,v=>selTheme=v,'active-pink',3);
+  buildChips('genre-grid',GENRES,()=>selGenre,v=>selGenre=v,'active-teal',3);
+  buildChips('detail-grid',DETAILS,()=>selDetail,v=>selDetail=v,'active-white',3);
+  buildChips('palette-grid',PALETTES,()=>selPalette,v=>selPalette=v,'active-gold',3);
+  buildChips('subject-grid',SUBJECTS,()=>selSubject,v=>selSubject=v,'active-purple',3);
+}
+
+function renderExhibit(){
+  const img=document.getElementById('exhibit-img'),empty=document.getElementById('empty-state'),meta=document.getElementById('exhibit-meta'),loader=document.getElementById('loading-state'),overlay=document.getElementById('exhibit-overlay');
+  document.getElementById('artwork-count').textContent=gallery.length;
+  if(isLoading){img.style.display='none';empty.style.display='none';meta.style.display='none';overlay.style.display='none';loader.style.display='flex';return}
+  loader.style.display='none';
+  if(gallery.length===0){img.style.display='none';meta.style.display='none';overlay.style.display='none';empty.style.display='flex';return}
+  const item=gallery[curIdx];if(!item){curIdx=0;renderExhibit();return}
+  empty.style.display='none';overlay.style.display='';img.style.opacity='0';img.style.display='block';
+  img.src=item.url;img.onload=()=>{img.style.opacity='1'};img.onerror=()=>{img.style.opacity='1'};
+  document.getElementById('exhibit-title').textContent=item.title;
+  document.getElementById('exhibit-artist').textContent='by '+item.artist;
+  meta.style.display='';
+  document.getElementById('ex-img').src=item.url;
+  document.getElementById('ex-title').textContent=item.title;
+  document.getElementById('ex-desc').textContent='"'+item.description.substring(0,200)+(item.description.length>200?'...':"'")+'"';
+  document.getElementById('ex-artist-ex').textContent='Artist: '+item.artist;
+}
+
+function renderGallery(){
+  const c=document.getElementById('gallery-items');c.innerHTML='';
+  gallery.forEach((item,idx)=>{
+    const div=document.createElement('div');div.className='thumb'+(idx===curIdx?' active':'');
+    div.innerHTML='<img src="'+item.url+'" alt=""><div class="thumb-format">'+(item.format||'Sq')+'</div><div class="thumb-title">'+item.title+'</div><button class="thumb-del" data-id="'+item.id+'">\xd7</button>';
+    div.addEventListener('click',e=>{if(e.target.classList.contains('thumb-del'))return;curIdx=idx;renderExhibit();renderGallery()});
+    div.querySelector('.thumb-del').addEventListener('click',e=>{e.stopPropagation();gallery=gallery.filter(i=>i.id!==item.id);if(curIdx>=gallery.length)curIdx=Math.max(0,gallery.length-1);saveGallery();renderExhibit();renderGallery()});
+    c.appendChild(div);
   });
 }
 
-// ─── Exhibit render ────────────────────────────────────────────────────────
-function renderExhibit() {
-  const img    = document.getElementById('exhibit-img');
-  const empty  = document.getElementById('empty-state');
-  const meta   = document.getElementById('exhibit-meta');
-  const loader = document.getElementById('loading-state');
-  const overlay = document.getElementById('exhibit-overlay');
-  document.getElementById('artwork-count').textContent = gallery.length;
-
-  if (isLoading) {
-    img.style.display = 'none'; empty.style.display = 'none';
-    meta.style.display = 'none'; overlay.style.display = 'none';
-    loader.style.display = 'flex';
-    return;
-  }
-  loader.style.display = 'none';
-
-  if (gallery.length === 0) {
-    img.style.display = 'none'; meta.style.display = 'none'; overlay.style.display = 'none';
-    empty.style.display = 'flex';
-    return;
-  }
-
-  const item = gallery[curIdx];
-  if (!item) { curIdx = 0; renderExhibit(); return; }
-
-  empty.style.display = 'none'; overlay.style.display = '';
-  img.style.display = 'block'; img.style.opacity = '0';
-  img.src = item.url;
-  img.onload  = () => { img.style.opacity = '1'; };
-  img.onerror = () => { img.src = `https://picsum.photos/seed/${item.id}/1024/768?blur=5`; img.style.opacity = '1'; };
-  document.getElementById('exhibit-title').textContent  = item.title;
-  document.getElementById('exhibit-artist').textContent = 'by ' + item.artist;
-  meta.style.display = '';
-  document.getElementById('open-full-btn').href = item.url;
-
-  // Exhibition modal sync
-  document.getElementById('ex-img').src    = item.url;
-  document.getElementById('ex-title').textContent  = item.title;
-  document.getElementById('ex-desc').textContent   = '"' + item.description + '"';
-  document.getElementById('ex-artist').textContent = 'Artist: ' + item.artist;
+function handlePhotoUpload(file){
+  if(!file||!file.type.startsWith('image/'))return;
+  photoMimeType=file.type;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    photoDataURL=e.target.result;
+    const prev=document.getElementById('upload-preview');prev.src=photoDataURL;prev.classList.add('visible');
+    document.getElementById('upload-text').style.display='none';
+    document.getElementById('upload-clear').classList.add('visible');
+    document.getElementById('upload-zone').classList.add('has-photo');
+    document.getElementById('photo-badge').style.display='inline-flex';
+    updatePromptPreview();
+  };
+  reader.readAsDataURL(file);
+}
+function clearPhoto(){
+  photoDataURL=null;
+  document.getElementById('upload-preview').src='';document.getElementById('upload-preview').classList.remove('visible');
+  document.getElementById('upload-text').style.display='';document.getElementById('upload-clear').classList.remove('visible');
+  document.getElementById('upload-zone').classList.remove('has-photo');document.getElementById('photo-badge').style.display='none';
+  document.getElementById('photo-input').value='';updatePromptPreview();
 }
 
-// ─── Gallery bar ──────────────────────────────────────────────────────────
-function renderGallery() {
-  const container = document.getElementById('gallery-items');
-  container.innerHTML = '';
-  gallery.forEach((item, idx) => {
-    const div = document.createElement('div');
-    div.className = 'thumb' + (idx === curIdx ? ' active' : '');
-    div.innerHTML = `
-      <img src="${item.url}" alt="" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/${item.id}/200/200'">
-      <div class="thumb-format">${item.format || 'Sq'}</div>
-      <div class="thumb-title">${item.title}</div>
-      <button class="thumb-del" data-id="${item.id}" title="Remove">×</button>
-    `;
-    div.addEventListener('click', e => {
-      if (e.target.classList.contains('thumb-del')) return;
-      curIdx = idx; renderExhibit(); renderGallery();
+function fireConfetti(c1,c2,c3){
+  const canvas=document.getElementById('confetti-canvas'),ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const p=Array.from({length:130},()=>({x:Math.random()*canvas.width,y:-10,vx:(Math.random()-.5)*6,vy:Math.random()*4+2,color:[c1,c2,c3][Math.floor(Math.random()*3)],size:Math.random()*6+3,angle:Math.random()*360,spin:(Math.random()-.5)*8,opacity:1}));
+  (function a(){ctx.clearRect(0,0,canvas.width,canvas.height);let alive=false;p.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=0.11;q.angle+=q.spin;q.opacity-=0.011;if(q.opacity>0){alive=true;ctx.save();ctx.globalAlpha=Math.max(0,q.opacity);ctx.fillStyle='rgb('+q.color.join(',')+')';ctx.translate(q.x,q.y);ctx.rotate(q.angle*Math.PI/180);ctx.fillRect(-q.size/2,-q.size/2,q.size,q.size);ctx.restore()}});if(alive)requestAnimationFrame(a);else ctx.clearRect(0,0,canvas.width,canvas.height)})();
+}
+
+let toastTimer;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500)}
+
+document.getElementById('curate-btn').addEventListener('click',addArt);
+document.getElementById('remix-btn').addEventListener('click',remixArt);
+document.getElementById('export-btn').addEventListener('click',exportPNG);
+document.getElementById('regenerate-btn').addEventListener('click',regenerateCurrent);
+document.getElementById('prev-btn').addEventListener('click',()=>{if(!gallery.length)return;curIdx=(curIdx-1+gallery.length)%gallery.length;renderExhibit();renderGallery()});
+document.getElementById('next-btn').addEventListener('click',()=>{if(!gallery.length)return;curIdx=(curIdx+1)%gallery.length;renderExhibit();renderGallery()});
+document.getElementById('surprise-btn').addEventListener('click',()=>{selTheme=THEMES[Math.floor(Math.random()*THEMES.length)];selGenre=GENRES[Math.floor(Math.random()*GENRES.length)];selDetail=DETAILS[Math.floor(Math.random()*DETAILS.length)];selPalette=PALETTES[Math.floor(Math.random()*PALETTES.length)];selSubject=SUBJECTS[Math.floor(Math.random()*SUBJECTS.length)];selFormat=FORMATS[Math.floor(Math.random()*FORMATS.length)];renderChips();updatePromptPreview()});
+document.getElementById('reset-btn').addEventListener('click',()=>{if(confirm('Clear the entire gallery?')){gallery=[];curIdx=0;saveGallery();renderExhibit();renderGallery()}});
+document.getElementById('exhibit-toggle-btn').addEventListener('click',()=>document.getElementById('exhibition-modal').classList.add('open'));
+document.getElementById('ex-close-btn').addEventListener('click',()=>document.getElementById('exhibition-modal').classList.remove('open'));
+document.getElementById('exhibition-modal').addEventListener('click',e=>{if(e.target===document.getElementById('exhibition-modal'))document.getElementById('exhibition-modal').classList.remove('open')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('exhibition-modal').classList.remove('open');if(e.key==='ArrowLeft')document.getElementById('prev-btn').click();if(e.key==='ArrowRight')document.getElementById('next-btn').click()});
+const expEl=document.getElementById('explanation'),clearExpBtn=document.getElementById('clear-explanation');
+expEl.addEventListener('input',()=>{clearExpBtn.style.display=expEl.value.trim()?'block':'none';updatePromptPreview()});
+clearExpBtn.addEventListener('click',()=>{expEl.value='';clearExpBtn.style.display='none';updatePromptPreview()});
+document.getElementById('extras').addEventListener('input',updatePromptPreview);
+document.getElementById('gemini-key').addEventListener('change',saveKeys);
+document.getElementById('groq-key').addEventListener('change',saveKeys);
+document.getElementById('photo-input').addEventListener('change',e=>handlePhotoUpload(e.target.files[0]));
+document.getElementById('upload-clear').addEventListener('click',e=>{e.stopPropagation();clearPhoto()});
+const uz=document.getElementById('upload-zone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.style.borderColor='var(--purple)'});
+uz.addEventListener('dragleave',()=>{uz.style.borderColor=''});
+uz.addEventListener('drop',e=>{e.preventDefault();uz.style.borderColor='';handlePhotoUpload(e.dataTransfer.files[0])});
+
+gallery=loadGallery();loadKeys();renderChips();updatePromptPreview();renderExhibit();renderGallery();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// --- SETTINGS MODAL -----------------------------------------------------------
+const APP_VERSION = 'v3.4.0';
+
+function openSettings(){
+  // Sync current key values into settings inputs
+  document.getElementById('s-gemini-key').value = localStorage.getItem('dv_gk') || '';
+  document.getElementById('s-groq-key').value   = localStorage.getItem('dv_grk') || '';
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('settings-modal').classList.remove('open');
+}
+
+document.getElementById('settings-btn').addEventListener('click', openSettings);
+document.getElementById('settings-close-btn').addEventListener('click', closeSettings);
+document.getElementById('settings-modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('settings-modal')) closeSettings();
+});
+
+document.getElementById('s-save-keys-btn').addEventListener('click', () => {
+  const gk  = document.getElementById('s-gemini-key').value.trim();
+  const grk = document.getElementById('s-groq-key').value.trim();
+  if(gk)  { localStorage.setItem('dv_gk',  gk);  document.getElementById('gemini-key') && (document.getElementById('gemini-key').value = gk); }
+  if(grk) { localStorage.setItem('dv_grk', grk); document.getElementById('groq-key')   && (document.getElementById('groq-key').value   = grk); }
+  showToast('Keys saved.');
+});
+
+document.getElementById('s-clear-keys-btn').addEventListener('click', () => {
+  if(!confirm('Clear both API keys from storage?')) return;
+  localStorage.removeItem('dv_gk'); localStorage.removeItem('dv_grk');
+  document.getElementById('s-gemini-key').value = '';
+  document.getElementById('s-groq-key').value   = '';
+  showToast('Keys cleared.');
+});
+
+// --- EXPORT GALLERY JSON ------------------------------------------------------
+document.getElementById('s-export-json-btn').addEventListener('click', () => {
+  if(gallery.length === 0){ showToast('Gallery is empty -- nothing to export.'); return; }
+  const payload = {
+    app: 'Little DaVinci',
+    version: APP_VERSION,
+    exported: new Date().toISOString(),
+    count: gallery.length,
+    keys: {
+      gemini: localStorage.getItem('dv_gk') || '',
+      groq:   localStorage.getItem('dv_grk') || ''
+    },
+    gallery: gallery
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const stamp = new Date().toISOString().slice(0,10);
+  a.download = 'little-davinci-' + stamp + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Exported ' + gallery.length + ' artworks + keys.');
+});
+
+// --- IMPORT GALLERY JSON ------------------------------------------------------
+document.getElementById('s-import-json-btn').addEventListener('click', () => {
+  document.getElementById('json-import-input').click();
+});
+
+document.getElementById('json-import-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const payload = JSON.parse(ev.target.result);
+      // Accept either {gallery:[...]} wrapper or raw array
+      const incoming = Array.isArray(payload) ? payload : (payload.gallery || []);
+      if(!Array.isArray(incoming) || incoming.length === 0){
+        showToast('No valid artworks found in file.'); return;
+      }
+      const action = confirm('Import ' + incoming.length + ' artwork(s)?\n\nOK = MERGE with current gallery.\nCANCEL = replace gallery entirely.');
+      // action=true -> merge, action=false (cancel) -> confirm replace
+      if(action){
+        // Merge: avoid duplicate IDs
+        const existingIds = new Set(gallery.map(i => i.id));
+        const newItems = incoming.filter(i => !existingIds.has(i.id));
+        gallery = [...gallery, ...newItems];
+        showToast('Merged ' + newItems.length + ' new artwork(s).');
+      } else {
+        if(!confirm('Replace entire gallery with ' + incoming.length + ' imported artwork(s)?')) return;
+        gallery = incoming;
+        curIdx = 0;
+        showToast('Gallery replaced with ' + incoming.length + ' artwork(s).');
+      }
+      // Restore keys if present in payload
+      if (payload.keys) {
+        if (payload.keys.gemini) {
+          localStorage.setItem('dv_gk', payload.keys.gemini);
+          document.getElementById('gemini-key').value = payload.keys.gemini;
+          document.getElementById('s-gemini-key').value = payload.keys.gemini;
+        }
+        if (payload.keys.groq) {
+          localStorage.setItem('dv_grk', payload.keys.groq);
+          document.getElementById('groq-key').value = payload.keys.groq;
+          document.getElementById('s-groq-key').value = payload.keys.groq;
+        }
+        showToast('Gallery + keys restored.');
+      } else {
+        showToast('Gallery imported. No keys found in file.');
+      }
+      saveGallery(); renderExhibit(); renderGallery(); closeSettings();
+    } catch(err) {
+      showToast('Import failed: invalid JSON file.');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = ''; // reset so same file can be re-imported
+});
+
+// --- SETTINGS RESET GALLERY ---------------------------------------------------
+document.getElementById('s-reset-gallery-btn').addEventListener('click', () => {
+  if(!confirm('Clear the entire gallery? This cannot be undone.')) return;
+  gallery = []; curIdx = 0; saveGallery(); renderExhibit(); renderGallery();
+  showToast('Gallery cleared.'); closeSettings();
+});
+
+// --- ESC closes settings too --------------------------------------------------
+// (patch existing keydown listener)
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeSettings();
+});
+
+
+// ================================================================
+//  GALLERY MANAGER
+// ================================================================
+let gmSelectedId = null;
+let gmFilteredIds = [];  // ordered list of IDs matching current filter/sort
+
+function openGalleryManager() {
+  gmSelectedId = null;
+  renderGalleryManager();
+  document.getElementById('gallery-modal').classList.add('open');
+  document.getElementById('gm-search').value = '';
+  document.getElementById('gm-sort').value = 'newest';
+}
+function closeGalleryManager() {
+  document.getElementById('gallery-modal').classList.remove('open');
+}
+
+function getFilteredSorted() {
+  const q     = (document.getElementById('gm-search').value || '').toLowerCase().trim();
+  const sort  = document.getElementById('gm-sort').value;
+  let items   = gallery.filter(it =>
+    !q || it.title.toLowerCase().includes(q) || (it.artist||'').toLowerCase().includes(q)
+  );
+  if (sort === 'newest')  items = [...items].reverse();
+  else if (sort === 'oldest') { /* already oldest-first */ }
+  else if (sort === 'title')  items = [...items].sort((a,b) => a.title.localeCompare(b.title));
+  else if (sort === 'artist') items = [...items].sort((a,b) => (a.artist||'').localeCompare(b.artist||''));
+  gmFilteredIds = items.map(i => i.id);
+  return items;
+}
+
+function renderGalleryManager() {
+  const items = getFilteredSorted();
+  const grid  = document.getElementById('gm-grid');
+  document.getElementById('gm-count').textContent = gallery.length + ' artwork' + (gallery.length !== 1 ? 's' : '');
+  grid.innerHTML = '';
+
+  if (items.length === 0) {
+    grid.innerHTML = '<div class="gm-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><p>' + (gallery.length === 0 ? 'No artworks yet' : 'No results') + '</p></div>';
+    return;
+  }
+
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'gm-card' + (item.id === gmSelectedId ? ' selected' : '');
+    card.dataset.id = item.id;
+    card.innerHTML =
+      '<img src="' + item.url + '" alt="" loading="lazy">' +
+      '<div class="gm-card-fmt">' + (item.format || 'Sq') + '</div>' +
+      '<div class="gm-card-overlay">' +
+        '<div class="gm-card-title">' + escHtml(item.title) + '</div>' +
+        '<div class="gm-card-artist">by ' + escHtml(item.artist || 'Unknown') + '</div>' +
+      '</div>' +
+      '<button class="gm-card-del" data-id="' + item.id + '" title="Delete">×</button>';
+
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('gm-card-del')) return;
+      gmSelectedId = item.id;
+      renderGalleryManager();
+      loadEditorForId(item.id);
     });
-    div.querySelector('.thumb-del').addEventListener('click', e => {
-      e.stopPropagation(); removeArt(item.id);
+    card.querySelector('.gm-card-del').addEventListener('click', e => {
+      e.stopPropagation();
+      deleteFromManager(item.id);
     });
-    container.appendChild(div);
+    grid.appendChild(card);
   });
+
+  // Scroll selected card into view
+  if (gmSelectedId) {
+    const sel = grid.querySelector('.gm-card.selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
 }
 
-function removeArt(id) {
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadEditorForId(id) {
+  const item = gallery.find(i => i.id === id);
+  if (!item) return;
+  const editorEmpty   = document.getElementById('gm-editor-empty');
+  const editorContent = document.getElementById('gm-editor-content');
+  editorEmpty.style.display   = 'none';
+  editorContent.style.display = 'flex';
+  document.getElementById('gm-editor-img').src    = item.url;
+  document.getElementById('gm-ed-title').value    = item.title || '';
+  document.getElementById('gm-ed-artist').value   = item.artist || '';
+  document.getElementById('gm-ed-desc').value     = item.description || '';
+  document.getElementById('gm-ed-prompt').value   = item.description || '';
+  // Nav info
+  const pos = gmFilteredIds.indexOf(id);
+  document.getElementById('gm-nav-info').textContent = (pos + 1) + ' of ' + gmFilteredIds.length;
+  // Reset save btn
+  const saveBtn = document.getElementById('gm-save-btn');
+  saveBtn.textContent = 'Save Changes';
+  saveBtn.className   = 'gm-save-btn';
+}
+
+function saveEditorChanges() {
+  if (!gmSelectedId) return;
+  const idx = gallery.findIndex(i => i.id === gmSelectedId);
+  if (idx < 0) return;
+  gallery[idx].title       = document.getElementById('gm-ed-title').value.trim()  || gallery[idx].title;
+  gallery[idx].artist      = document.getElementById('gm-ed-artist').value.trim() || gallery[idx].artist;
+  gallery[idx].description = document.getElementById('gm-ed-desc').value.trim();
+  saveGallery();
+  renderGalleryManager();
+  renderGallery();       // update main footer strip
+  renderExhibit();       // update exhibit if this item is active
+  // Visual feedback
+  const btn = document.getElementById('gm-save-btn');
+  btn.textContent = 'Saved!';
+  btn.className   = 'gm-save-btn saved';
+  setTimeout(() => { btn.textContent = 'Save Changes'; btn.className = 'gm-save-btn'; }, 1800);
+}
+
+function deleteFromManager(id) {
+  if (!confirm('Delete this artwork? This cannot be undone.')) return;
   gallery = gallery.filter(i => i.id !== id);
   if (curIdx >= gallery.length) curIdx = Math.max(0, gallery.length - 1);
-  saveGallery(); renderExhibit(); renderGallery();
-}
-
-// ─── Add Art ───────────────────────────────────────────────────────────────
-async function addArt() {
-  if (isLoading) return;
-  isLoading = true;
-  const curateBtn = document.getElementById('curate-btn');
-  curateBtn.disabled = true;
-  curateBtn.classList.add('generating');
-  renderExhibit();
-
-  await new Promise(r => setTimeout(r, 600)); // small UX delay
-
-  const explanation = document.getElementById('explanation').value.trim();
-  const extras      = document.getElementById('extras').value.trim();
-  const artistInput = document.getElementById('artist-name').value.trim();
-
-  const baseDesc = explanation || `${selDetail} ${selGenre} of a ${selTheme}${extras ? '. ' + extras : ''}`;
-  const formatHint = selFormat.name === 'Icon'      ? 'as a clean app icon, white background'
-                   : selFormat.name === 'Portrait'  ? 'as a vertical phone wallpaper'
-                   : selFormat.name === 'Landscape' ? 'as a wide cinematic wall art' : '';
-  const description = (baseDesc + (formatHint ? ' ' + formatHint : '')).trim();
-  const prompt = description + ', digital art, highly detailed, vibrant, masterpiece';
-
-  const seed = Math.floor(Math.random() * 9999999);
-  const url  = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${selFormat.width}&height=${selFormat.height}&seed=${seed}&nologo=true&model=flux`;
-
-  const title = explanation
-    ? (explanation.length > 24 ? explanation.substring(0,24) + '…' : explanation)
-    : `${selTheme} ${selGenre}`;
-
-  gallery.push({ id: Date.now().toString(), url, title, description, artist: artistInput || 'Young Artist', format: selFormat.name });
-  curIdx = gallery.length - 1;
+  if (gmSelectedId === id) {
+    gmSelectedId = null;
+    document.getElementById('gm-editor-empty').style.display   = '';
+    document.getElementById('gm-editor-content').style.display = 'none';
+  }
   saveGallery();
-
-  // Clear inputs
-  document.getElementById('explanation').value = '';
-  document.getElementById('extras').value      = '';
-  document.getElementById('artist-name').value = '';
-  document.getElementById('clear-explanation').style.display = 'none';
-
-  isLoading = false;
-  curateBtn.disabled = false;
-  curateBtn.classList.remove('generating');
-  renderExhibit(); renderGallery(); renderChips();
-  fireConfetti([255,107,157],[78,205,196],[255,255,255]);
+  renderGalleryManager();
+  renderGallery();
+  renderExhibit();
+  document.getElementById('gm-count').textContent = gallery.length + ' artwork' + (gallery.length !== 1 ? 's' : '');
 }
 
-// ─── Groq Remix ───────────────────────────────────────────────────────────
-async function remixArt() {
-  if (gallery.length === 0) { alert('Add some art first!'); return; }
-  const apiKey = document.getElementById('groq-key').value.trim();
-  if (!apiKey) { alert('Enter your Groq API key in the header to use Remix.'); return; }
-
-  const remixBtn = document.getElementById('remix-btn');
-  remixBtn.disabled = true; remixBtn.textContent = 'Remixing…';
-  document.getElementById('remix-status').textContent = 'Active';
-
-  const descriptions = gallery.map(i => i.description).join('\n');
-  const systemMsg = `You are an expert art curator for a children's art engine called "Little DaVinci". Given a collection of artwork descriptions, invent a COMPLETELY NEW whimsical concept. Respond ONLY with valid JSON: {"title":"...","description":"...","prompt":"..."}. The prompt should be under 50 words, vivid, and suitable for an image generator. No markdown, no backticks.`;
-  const userMsg = `Here are the art descriptions:\n${descriptions}\n\nCreate a unique new concept that blends or transcends these styles.`;
-
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role:'system', content: systemMsg },{ role:'user', content: userMsg }],
-        temperature: 0.9, max_tokens: 300
-      })
-    });
-    const data = await res.json();
-    const raw  = data.choices?.[0]?.message?.content || '{}';
-    const result = JSON.parse(raw.replace(/```json|```/g,'').trim());
-
-    const seed = Math.floor(Math.random() * 9999999);
-    const url  = `https://image.pollinations.ai/prompt/${encodeURIComponent(result.prompt || 'abstract vibrant digital art')}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
-
-    gallery.push({ id: Date.now().toString(), url, title: result.title || 'The Infinite Remix', description: result.description || '', artist: 'Groq AI', format: 'Square', isGenerative: true });
-    curIdx = gallery.length - 1;
-    saveGallery(); renderExhibit(); renderGallery();
-    fireConfetti([255,107,157],[78,205,196],[255,230,109]);
-  } catch(err) {
-    console.error(err);
-    alert('Remix failed: ' + err.message);
-  }
-
-  remixBtn.disabled = false; remixBtn.textContent = 'Generate Remix';
-  document.getElementById('remix-status').textContent = 'Standby';
+function navigateEditor(dir) {
+  if (!gmFilteredIds.length) return;
+  const pos = gmSelectedId ? gmFilteredIds.indexOf(gmSelectedId) : -1;
+  const newPos = (pos + dir + gmFilteredIds.length) % gmFilteredIds.length;
+  gmSelectedId = gmFilteredIds[newPos];
+  renderGalleryManager();
+  loadEditorForId(gmSelectedId);
 }
 
-// ─── Confetti ─────────────────────────────────────────────────────────────
-function fireConfetti(c1, c2, c3) {
-  const canvas = document.getElementById('confetti-canvas');
-  const ctx    = canvas.getContext('2d');
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
+// ── Wire gallery manager ──────────────────────────────────────────
+document.getElementById('gallery-mgr-btn').addEventListener('click', openGalleryManager);
+document.getElementById('gm-close-btn').addEventListener('click', closeGalleryManager);
+document.getElementById('gallery-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('gallery-modal')) closeGalleryManager();
+});
+document.getElementById('gm-search').addEventListener('input', renderGalleryManager);
+document.getElementById('gm-sort').addEventListener('change', renderGalleryManager);
+document.getElementById('gm-save-btn').addEventListener('click', saveEditorChanges);
+document.getElementById('gm-nav-prev').addEventListener('click', () => navigateEditor(-1));
+document.getElementById('gm-nav-next').addEventListener('click', () => navigateEditor(1));
 
-  const particles = Array.from({length:120}, () => ({
-    x: Math.random() * canvas.width,
-    y: -10,
-    vx: (Math.random()-0.5) * 6,
-    vy: Math.random() * 4 + 2,
-    color: [c1,c2,c3][Math.floor(Math.random()*3)],
-    size: Math.random()*6+3,
-    angle: Math.random()*360,
-    spin: (Math.random()-0.5)*8,
-    opacity: 1
-  }));
+document.getElementById('gm-set-active-btn').addEventListener('click', () => {
+  if (!gmSelectedId) return;
+  const idx = gallery.findIndex(i => i.id === gmSelectedId);
+  if (idx >= 0) { curIdx = idx; renderExhibit(); renderGallery(); closeGalleryManager(); }
+});
 
-  let frame;
-  function animate() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    let alive = false;
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy; p.vy += 0.12;
-      p.angle += p.spin; p.opacity -= 0.012;
-      if (p.opacity > 0) {
-        alive = true;
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, p.opacity);
-        ctx.fillStyle = `rgb(${p.color.join(',')})`;
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.angle * Math.PI/180);
-        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
-        ctx.restore();
-      }
-    });
-    if (alive) frame = requestAnimationFrame(animate);
-    else ctx.clearRect(0,0,canvas.width,canvas.height);
-  }
-  if (frame) cancelAnimationFrame(frame);
-  animate();
-}
+document.getElementById('gm-export-one-btn').addEventListener('click', async () => {
+  if (!gmSelectedId) return;
+  const savedIdx = curIdx;
+  const tgtIdx   = gallery.findIndex(i => i.id === gmSelectedId);
+  if (tgtIdx < 0) return;
+  curIdx = tgtIdx;
+  await exportPNG();
+  curIdx = savedIdx;
+});
 
-// ─── Wiring ───────────────────────────────────────────────────────────────
-document.getElementById('curate-btn').addEventListener('click', addArt);
-document.getElementById('remix-btn').addEventListener('click', remixArt);
-document.getElementById('regenerate-btn').addEventListener('click', () => {
-  const item = gallery[curIdx];
-  if (!item) return;
-  try {
-    const u = new URL(item.url);
-    u.searchParams.set('seed', Math.floor(Math.random()*9999999));
-    gallery[curIdx] = { ...item, url: u.toString() };
-    saveGallery(); renderExhibit(); renderGallery();
-  } catch(e) {}
+document.getElementById('gm-delete-btn').addEventListener('click', () => {
+  if (gmSelectedId) deleteFromManager(gmSelectedId);
 });
-document.getElementById('prev-btn').addEventListener('click', () => {
-  if (!gallery.length) return;
-  curIdx = (curIdx - 1 + gallery.length) % gallery.length;
-  renderExhibit(); renderGallery();
-});
-document.getElementById('next-btn').addEventListener('click', () => {
-  if (!gallery.length) return;
-  curIdx = (curIdx + 1) % gallery.length;
-  renderExhibit(); renderGallery();
-});
-document.getElementById('surprise-btn').addEventListener('click', () => {
-  selTheme  = THEMES[Math.floor(Math.random()*THEMES.length)];
-  selGenre  = GENRES[Math.floor(Math.random()*GENRES.length)];
-  selDetail = DETAILS[Math.floor(Math.random()*DETAILS.length)];
-  selFormat = FORMATS[Math.floor(Math.random()*FORMATS.length)];
-  renderChips();
-});
-document.getElementById('reset-btn').addEventListener('click', () => {
-  if (confirm('Clear the entire gallery?')) {
-    gallery = []; curIdx = 0; saveGallery(); renderExhibit(); renderGallery();
-  }
-});
-document.getElementById('exhibit-toggle-btn').addEventListener('click', () => {
-  document.getElementById('exhibition-modal').classList.add('open');
-});
-document.getElementById('ex-close-btn').addEventListener('click', () => {
-  document.getElementById('exhibition-modal').classList.remove('open');
-});
-document.getElementById('exhibition-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('exhibition-modal'))
-    document.getElementById('exhibition-modal').classList.remove('open');
-});
+
+// Allow Escape to close gallery manager too
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('exhibition-modal').classList.remove('open');
-  if (e.key === 'ArrowLeft')  document.getElementById('prev-btn').click();
-  if (e.key === 'ArrowRight') document.getElementById('next-btn').click();
-});
-const explanationEl = document.getElementById('explanation');
-const clearBtn      = document.getElementById('clear-explanation');
-explanationEl.addEventListener('input', () => {
-  clearBtn.style.display = explanationEl.value.trim() ? 'block' : 'none';
-  renderChips();
-});
-clearBtn.addEventListener('click', () => {
-  explanationEl.value = ''; clearBtn.style.display = 'none'; renderChips();
+  if (e.key === 'Escape' && document.getElementById('gallery-modal').classList.contains('open')) {
+    closeGalleryManager();
+  }
 });
 
-// ─── Init ─────────────────────────────────────────────────────────────────
-gallery = loadGallery();
-renderChips();
-renderExhibit();
-renderGallery();
 
-// ─── Service Worker ───────────────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+// ── Wire mode buttons ────────────────────────────────────────────────────────
+document.getElementById('mode-full-btn').addEventListener('click',    () => applyMode('full'));
+document.getElementById('mode-compact-btn').addEventListener('click', () => applyMode('compact'));
+document.getElementById('mode-focus-btn').addEventListener('click',   () => applyMode('focus'));
 </script>
 </body>
 </html>
